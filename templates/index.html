@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Дневник трейдера</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f2f2;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        .donate {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .donate a {
+            text-decoration: none;
+            font-weight: bold;
+            color: #654321;
+        }
+    </style>
+</head>
+<body>
+    <h1>Дневник трейдера</h1>
+
+    <form action="/add" method="POST">
+        <input type="text" name="pair" placeholder="Пара (например, EUR/USD)" required>
+        <input type="date" name="date" required>
+        <select name="type">
+            <option value="Buy">Купить</option>
+            <option value="Sell">Продать</option>
+        </select>
+        <input type="number" name="lot" step="0.01" placeholder="Лот" required>
+        <input type="number" name="profit" step="0.01" placeholder="Прибыль/Убыток" required>
+        <input type="text" name="comment" placeholder="Комментарий">
+        <button type="submit">💾 Сохранить</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Пара</th>
+                <th>Дата</th>
+                <th>Тип</th>
+                <th>Лот</th>
+                <th>Прибыль/Убыток</th>
+                <th>Комментарий</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trade in trades %}
+            <tr>
+                <td>{{ trade.pair }}</td>
+                <td>{{ trade.date }}</td>
+                <td>{{ trade.type }}</td>
+                <td>{{ trade.lot }}</td>
+                <td>{{ trade.profit }}</td>
+                <td>{{ trade.comment }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="donate">
+       <p>☕ Поддержи проект:
+<a href="https://buymeacoffee.com/kakari" target="_blank">BuyMeACoffee</a> |
+<a href="https://yoomoney.ru/to/4100XXXXXXXXXXXX" target="_blank">ЮMoney</a></p>
+    </div>
+</body>
+</html>
