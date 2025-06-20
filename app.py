@@ -110,7 +110,7 @@ def add_trade():
     profit = float(request.form['profit'])
     comment = request.form.get('comment', '')
 
-    trades.insert(0, {  # 👈 Новые записи вставляются в начало
+    trades.insert(0, {  # Новая запись добавляется в начало списка
         'pair': pair,
         'date': date,
         'type': type_,
@@ -126,4 +126,3 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
