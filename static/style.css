@@ -1,0 +1,33 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  text-align: left;
+  font-size: 16px;
+}
+
+/* Мобильный стиль */
+@media (max-width: 600px) {
+  .container {
+    padding: 5px;
+  }
+
+  th, td {
+    font-size: 14px;
+    padding: 6px 8px;
+  }
+}
