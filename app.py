@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-# Переводы (оставляем как есть — ты уже сделал красиво)
+# Переводы
 translations = {
     'ru': {
         'title': 'Дневник трейдера',
@@ -26,10 +26,28 @@ translations = {
     }
 }
 
+# Подключение к БД
 def get_db_connection():
     conn = sqlite3.connect('trades.db')
     conn.row_factory = sqlite3.Row
     return conn
+
+# Создание таблицы, если нет
+def init_db():
+    conn = get_db_connection()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pair TEXT NOT NULL,
+            date TEXT NOT NULL,
+            type TEXT NOT NULL,
+            lot REAL NOT NULL,
+            profit REAL NOT NULL,
+            comment TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 @app.route('/', methods=['GET'])
 def index():
@@ -56,24 +74,27 @@ def index():
 
 @app.route('/add', methods=['POST'])
 def add_trade():
-    pair = request.form['pair']
-    date = request.form['date']
-    type_ = request.form['type']
-    lot = float(request.form['lot'])
-    profit = float(request.form['profit'])
-    comment = request.form.get('comment', '')
+    try:
+        pair = request.form['pair']
+        date = request.form['date']
+        type_ = request.form['type']
+        lot = float(request.form['lot'])
+        profit = float(request.form['profit'])
+        comment = request.form.get('comment', '')
 
-    conn = get_db_connection()
-    conn.execute(
-        'INSERT INTO trades (pair, date, type, lot, profit, comment) VALUES (?, ?, ?, ?, ?, ?)',
-        (pair, date, type_, lot, profit, comment)
-    )
-    conn.commit()
-    conn.close()
+        conn = get_db_connection()
+        conn.execute('INSERT INTO trades (pair, date, type, lot, profit, comment) VALUES (?, ?, ?, ?, ?, ?)',
+                     (pair, date, type_, lot, profit, comment))
+        conn.commit()
+        conn.close()
 
-    lang = request.args.get('lang', 'ru')
-    return redirect(f"/?lang={lang}")
+        lang = request.args.get('lang', 'ru')
+        return redirect(f"/?lang={lang}")
+
+    except Exception as e:
+        return f"Ошибка при добавлении записи: {e}"
 
 if __name__ == "__main__":
+    init_db()  # 👈 создаём таблицу, если не существует
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
