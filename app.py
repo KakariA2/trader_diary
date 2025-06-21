@@ -76,7 +76,7 @@ def index():
 def add_trade():
     try:
         pair = request.form['pair']
-        date = request.form['date'].replace('T', ' ')  # 👈 здесь просто сохраняем то, что пришло из формы
+        date = request.form['date'].replace('T', ' ')  # преобразуем ISO в читаемый формат
         type_ = request.form['type']
         lot = float(request.form['lot'])
         profit = float(request.form['profit'])
@@ -92,17 +92,11 @@ def add_trade():
 
         lang = request.args.get('lang', 'ru')
         return redirect(f"/?lang={lang}")
-    except Exception as e:
-        return f"Ошибка при добавлении записи: {e}"
-
-
-        lang = request.args.get('lang', 'ru')
-        return redirect(f"/?lang={lang}")
 
     except Exception as e:
         return f"Ошибка при добавлении записи: {e}"
 
 if __name__ == "__main__":
-    init_db()  # 👈 создаём таблицу, если не существует
+    init_db()  # создаём таблицу при старте, если её нет
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
