@@ -76,17 +76,25 @@ def index():
 def add_trade():
     try:
         pair = request.form['pair']
-        date = request.form['date']
+        date = request.form['date'].replace('T', ' ')  # 👈 здесь просто сохраняем то, что пришло из формы
         type_ = request.form['type']
         lot = float(request.form['lot'])
         profit = float(request.form['profit'])
         comment = request.form.get('comment', '')
 
         conn = get_db_connection()
-        conn.execute('INSERT INTO trades (pair, date, type, lot, profit, comment) VALUES (?, ?, ?, ?, ?, ?)',
-                     (pair, date, type_, lot, profit, comment))
+        conn.execute(
+            'INSERT INTO trades (pair, date, type, lot, profit, comment) VALUES (?, ?, ?, ?, ?, ?)',
+            (pair, date, type_, lot, profit, comment)
+        )
         conn.commit()
         conn.close()
+
+        lang = request.args.get('lang', 'ru')
+        return redirect(f"/?lang={lang}")
+    except Exception as e:
+        return f"Ошибка при добавлении записи: {e}"
+
 
         lang = request.args.get('lang', 'ru')
         return redirect(f"/?lang={lang}")

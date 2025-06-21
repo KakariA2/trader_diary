@@ -75,6 +75,16 @@
 <body>
     <h1>Дневник трейдера</h1>
 
+<div style="margin-top: 20px;">
+    <h3>{{ texts['total_profit'] }}: <span style="color: {{ 'green' if total_profit >= 0 else 'red' }}">{{ total_profit }}</span></h3>
+    <h4>{{ texts['profit_by_pair'] }}:</h4>
+    <ul>
+        {% for pair, profit in profit_by_pair.items() %}
+            <li>{{ pair }}: <span style="color: {{ 'green' if profit >= 0 else 'red' }}">{{ profit }}</span></li>
+        {% endfor %}
+    </ul>
+</div>
+
     <form action="/add" method="POST">
         <input type="text" name="pair" placeholder="Пара (например, EUR/USD)" required>
 		<input type="datetime-local" name="date" required>
