@@ -3,6 +3,22 @@
   margin: 0 auto;
   padding: 10px;
 }
+.support-box {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    background-color: #fff9db;
+    border: 1px solid #ffd700;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    z-index: 1000;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    user-select: none;
+    cursor: default;
+    opacity: 1;            /* Всегда видно */
+    pointer-events: auto;  /* Можно кликать */
+}
 
 .table-wrapper {
   overflow-x: auto;

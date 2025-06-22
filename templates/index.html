@@ -5,16 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дневник трейдера</title>
     <style>
+	.support-box {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    background-color: #fff9db;
+    border: 1px solid #ffd700;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    z-index: 1000;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    user-select: none;
+    opacity: 1;
+}
+.support-box a {
+    text-decoration: none;
+    color: #007BFF;
+    font-weight: bold;
+    margin: 0 4px;
+}
+
         body {
             font-family: Arial, sans-serif;
             background: #f5f5f5;
             margin: 10px;
             padding: 10px;
         }
+
         h1 {
             text-align: center;
             color: #333;
         }
+
         form {
             display: flex;
             flex-wrap: wrap;
@@ -22,6 +45,7 @@
             justify-content: center;
             margin-bottom: 20px;
         }
+
         form input, form select, form button {
             padding: 10px;
             font-size: 1em;
@@ -29,104 +53,153 @@
             border: 1px solid #ccc;
             flex: 1 1 200px;
         }
+
         form button {
             background-color: #4CAF50;
             color: white;
             cursor: pointer;
         }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             background-color: white;
             margin-bottom: 20px;
         }
+
         th, td {
             padding: 10px;
             border: 1px solid #ddd;
             text-align: center;
         }
+
         th {
             background-color: #eaeaea;
         }
-        .donate {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1em;
+
+        /* Фиксированный блок поддержки */
+        .support-box {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            background-color: #fff9db;
+            border: 1px solid #ffd700;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            user-select: none;
+            cursor: default;
+            opacity: 1;
+            pointer-events: auto;
         }
-        .donate a {
+
+        .support-box a {
             margin: 0 5px;
             text-decoration: none;
             color: #007BFF;
             font-weight: bold;
         }
 
-        /* Mobile optimization */
+        /* Мобильная адаптация */
         @media (max-width: 600px) {
             form {
                 flex-direction: column;
                 align-items: stretch;
             }
+
             table, thead, tbody, th, td, tr {
                 font-size: 0.9em;
+            }
+
+            .support-box {
+                right: 5px;
+                bottom: 5px;
+                font-size: 12px;
             }
         }
     </style>
 </head>
 <body>
-    <h1>Дневник трейдера</h1>
+    <div class="container">
+        <h1>Дневник трейдера</h1>
 
-<div style="margin-top: 20px;">
-    <h3>{{ texts['total_profit'] }}: <span style="color: {{ 'green' if total_profit >= 0 else 'red' }}">{{ total_profit }}</span></h3>
-    <h4>{{ texts['profit_by_pair'] }}:</h4>
-    <ul>
-        {% for pair, profit in profit_by_pair.items() %}
-            <li>{{ pair }}: <span style="color: {{ 'green' if profit >= 0 else 'red' }}">{{ profit }}</span></li>
-        {% endfor %}
-    </ul>
-</div>
+        <div style="margin-top: 20px;">
+            <h3>{{ texts['total_profit'] }}:
+                <span style="color: {{ 'green' if total_profit >= 0 else 'red' }}">
+                    {{ total_profit }}
+                </span>
+            </h3>
 
-    <form action="/add" method="POST">
-        <input type="text" name="pair" placeholder="Пара (например, EUR/USD)" required>
-		<input type="datetime-local" name="date" required>
-        <select name="type">
-            <option value="Buy">Купить</option>
-            <option value="Sell">Продать</option>
-        </select>
-        <input type="number" name="lot" step="0.01" placeholder="Лот" required>
-        <input type="number" name="profit" step="0.01" placeholder="Прибыль/Убыток" required>
-        <input type="text" name="comment" placeholder="Комментарий">
-        <button type="submit">💾 Сохранить</button>
-    </form>
+            <h4>{{ texts['profit_by_pair'] }}:</h4>
+            <ul>
+                {% for pair, profit in profit_by_pair.items() %}
+                    <li>{{ pair }}:
+                        <span style="color: {{ 'green' if profit >= 0 else 'red' }}">
+                            {{ profit }}
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Пара</th>
-                <th>Дата</th>
-                <th>Тип</th>
-                <th>Лот</th>
-                <th>Прибыль/Убыток</th>
-                <th>Комментарий</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for trade in trades %}
-            <tr>
-                <td>{{ trade.pair }}</td>
-                <td>{{ trade.date }}</td>
-                <td>{{ trade.type }}</td>
-                <td>{{ trade.lot }}</td>
-                <td>{{ trade.profit }}</td>
-                <td>{{ trade.comment }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <form action="/add" method="POST">
+            <input type="text" name="pair" placeholder="Пара (например, EUR/USD)" required>
+            <input type="datetime-local" name="date" required>
+            <select name="type">
+                <option value="Buy">Купить</option>
+                <option value="Sell">Продать</option>
+            </select>
+            <input type="number" name="lot" step="0.01" placeholder="Лот" required>
+            <input type="number" name="profit" step="0.01" placeholder="Прибыль/Убыток" required>
+            <input type="text" name="comment" placeholder="Комментарий">
+            <button type="submit">💾 Сохранить</button>
+        </form>
 
-    <div class="donate">
-        ☕ Поддержи проект:
-        <a href="https://buymeacoffee.com/kakari" target="_blank">BuyMeACoffee</a> |
-        <a href="https://yoomoney.ru/to/4100XXXXXXXXXXXX" target="_blank">ЮMoney</a>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Пара</th>
+                        <th>Дата</th>
+                        <th>Тип</th>
+                        <th>Лот</th>
+                        <th>Прибыль/Убыток</th>
+                        <th>Комментарий</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in trades %}
+                    <tr>
+                        <td>{{ trade.pair }}</td>
+                        <td>{{ trade.date }}</td>
+                        <td>{{ trade.type }}</td>
+                        <td>{{ trade.lot }}</td>
+                        <td>{{ trade.profit }}</td>
+                        <td>{{ trade.comment }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <!-- Блок поддержки -->
+    <div class="support-box">
+    ☕ Поддержи проект:
+    <a href="https://buymeacoffee.com/kakari" target="_blank">BuyMeACoffee</a> |
+    <a href="https://yoomoney.ru/to/4100XXXXXXXXXXXX" target="_blank">ЮMoney</a>
+</div>
 </body>
 </html>
