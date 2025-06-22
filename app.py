@@ -1,6 +1,10 @@
 from flask import Flask, render_template, request, redirect
 import sqlite3
 import os
+import shutil
+import datetime
+import smtplib
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 
@@ -26,13 +30,43 @@ translations = {
     }
 }
 
-# Подключение к базе данных
+# Отправка email при ошибках и для обратной связи
+def send_error_email(message):
+    sender = "mizarand@gmail.com"
+    app_password = "MonitorA2"
+    receiver = "mizarand@inbox.lv"  # Можно указать другую почту
+
+    msg = MIMEText(message)
+    msg["Subject"] = "❗ Trader Diary — Ошибка / Обратная связь"
+    msg["From"] = sender
+    msg["To"] = receiver
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender, app_password)
+            server.sendmail(sender, receiver, msg.as_string())
+    except Exception as e:
+        print(f"[Email] Ошибка при отправке письма: {e}")
+
+# Создание бэкапа базы данных
+def backup_db():
+    now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
+    backup_path = f"backup/trader_diary_backup_{now}.db"
+    try:
+        if not os.path.exists("backup"):
+            os.makedirs("backup")
+        shutil.copy('trader_diary.db', backup_path)
+        print(f"[Бэкап] Сохранена копия базы: {backup_path}")
+    except Exception as e:
+        print(f"[Бэкап] Ошибка при создании бэкапа: {e}")
+
+# Подключение к базе
 def get_db_connection():
     conn = sqlite3.connect('trader_diary.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Инициализация базы данных
+# Инициализация базы
 def init_db():
     conn = sqlite3.connect('trader_diary.db')
     conn.execute('''
@@ -76,7 +110,7 @@ def index():
 @app.route('/add', methods=['POST'])
 def add_trade():
     try:
-        pair = request.form['pair'].upper()  # 👈 делаем ПАРУ ЗАГЛАВНОЙ
+        pair = request.form['pair'].upper()
         date = request.form['date'].replace('T', ' ')
         type_ = request.form['type']
         lot = float(request.form['lot'])
@@ -94,10 +128,25 @@ def add_trade():
         lang = request.args.get('lang', 'ru')
         return redirect(f"/?lang={lang}")
     except Exception as e:
+        send_error_email(f"Ошибка при добавлении сделки:\n{str(e)}")
         return f"Ошибка при добавлении записи: {e}"
+
+# Страница обратной связи
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+    if request.method == 'POST':
+        name = request.form['name']
+        message = request.form['message']
+        try:
+            send_error_email(f"[Обратная связь от {name}]\n\n{message}")
+            return "Спасибо за сообщение!"
+        except Exception as e:
+            return f"Ошибка при отправке: {e}"
+    return render_template('feedback.html')
 
 # Запуск сервера
 if __name__ == "__main__":
     init_db()
+    backup_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)
