@@ -26,13 +26,13 @@ translations = {
     }
 }
 
-# Функция подключения к базе данных
+# Подключение к базе данных
 def get_db_connection():
     conn = sqlite3.connect('trader_diary.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Функция инициализации базы данных (создаёт таблицу, если нет)
+# Инициализация базы данных
 def init_db():
     conn = sqlite3.connect('trader_diary.db')
     conn.execute('''
@@ -49,7 +49,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Главная страница — показывает все сделки
+# Главная страница
 @app.route('/', methods=['GET'])
 def index():
     lang = request.args.get('lang', 'ru')
@@ -72,11 +72,11 @@ def index():
                            texts=texts,
                            lang=lang)
 
-# Добавление новой сделки
+# Добавление сделки
 @app.route('/add', methods=['POST'])
 def add_trade():
     try:
-        pair = request.form['pair']
+        pair = request.form['pair'].upper()  # 👈 делаем ПАРУ ЗАГЛАВНОЙ
         date = request.form['date'].replace('T', ' ')
         type_ = request.form['type']
         lot = float(request.form['lot'])
@@ -96,6 +96,7 @@ def add_trade():
     except Exception as e:
         return f"Ошибка при добавлении записи: {e}"
 
+# Запуск сервера
 if __name__ == "__main__":
     init_db()
     port = int(os.environ.get("PORT", 5000))

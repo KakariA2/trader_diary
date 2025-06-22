@@ -1,24 +1,21 @@
 import sqlite3
 
-DB_FILE = 'trader_diary.db'
+conn = sqlite3.connect('trader_diary.db')
+cursor = conn.cursor()
 
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS trades (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            pair TEXT NOT NULL,
-            date TEXT NOT NULL,
-            type TEXT NOT NULL,
-            lot REAL NOT NULL,
-            profit REAL NOT NULL,
-            comment TEXT DEFAULT ''
-        )
-    ''')
-    conn.commit()
-    conn.close()
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS trades (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pair TEXT NOT NULL,
+    date TEXT NOT NULL,
+    type TEXT NOT NULL,
+    lot REAL NOT NULL,
+    profit REAL NOT NULL,
+    comment TEXT
+)
+''')
 
-if __name__ == '__main__':
-    init_db()
-    print("Database initialized.")
+conn.commit()
+conn.close()
+
+print("Таблица trades успешно создана (если её не было).")

@@ -9,7 +9,6 @@ venv/
 *.sqlite3
 
 # === Trader Diary specific ===
-trader_diary.db
 
 # === Logs and misc ===
 *.log
