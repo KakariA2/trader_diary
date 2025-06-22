@@ -179,39 +179,47 @@
     <!-- Блок поддержки -->
     <!-- Блок поддержки -->
 <div class="support-box">
-    ☕ Поддержи проект:
+  <div style="margin-bottom: 5px;">
+    ☕ <strong>Поддержи проект:</strong>
     <a href="https://buymeacoffee.com/kakari" target="_blank">BuyMeACoffee</a> |
     <a href="https://yoomoney.ru/to/4100119196832465" target="_blank">ЮMoney</a>
-    <center>
-      <p><a href="http://127.0.0.1:5000/feedback">📩 Написать сообщение</a></p>
-      <button id="shareBtn" style="padding:6px 12px; font-size:14px; cursor:pointer; border-radius:5px; border:1px solid #4CAF50; background-color:#4CAF50; color:#fff;">
-        📤 Поделиться с другом
-      </button>
-    </center>
+  </div>
+
+  <div style="margin-top: 8px; text-align: center;">
+    <a href="/feedback" style="margin-right: 10px;">📩 Написать сообщение</a>
+    <button id="shareBtn" style="
+      padding: 8px 14px;
+      font-size: 14px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    ">
+      📤 Поделиться с другом
+    </button>
+  </div>
 </div>
 
+
 <script>
-document.getElementById('shareBtn').onclick = function() {
-  if (navigator.share) {
-    navigator.share({
-      title: document.title,
-      text: 'Посмотри этот трейдерский дневник — удобно для учёта сделок!',
-      url: window.location.href
-    }).catch(err => {
-      console.error('Ошибка при шаринге:', err);
-      alert('Не удалось поделиться, попробуйте скопировать ссылку вручную.');
-    });
-  } else if (navigator.clipboard) {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      alert('Ссылка скопирована! Теперь можешь отправить её другу.');
-    }).catch(() => {
-      alert('Не удалось скопировать ссылку, попробуйте вручную.');
-    });
-  } else {
-    alert('Функция "Поделиться" не поддерживается этим браузером.');
-  }
-}
+  document.getElementById('shareBtn').addEventListener('click', async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Дневник трейдера',
+          text: 'Попробуй этот полезный проект: Дневник трейдера 📈',
+          url: window.location.href
+        });
+      } catch (err) {
+        console.log('Ошибка при попытке поделиться:', err);
+      }
+    } else {
+      alert('Функция «Поделиться» не поддерживается на этом устройстве. Просто скопируй ссылку из адресной строки.');
+    }
+  });
 </script>
+
 
 	
 

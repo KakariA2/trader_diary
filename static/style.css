@@ -3,21 +3,27 @@
   margin: 0 auto;
   padding: 10px;
 }
+
 .support-box {
-    position: fixed;
-    bottom: 15px;
-    right: 15px;
-    background-color: #fff9db;
-    border: 1px solid #ffd700;
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 14px;
-    z-index: 1000;
-    box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    user-select: none;
-    cursor: default;
-    opacity: 1;            /* Всегда видно */
-    pointer-events: auto;  /* Можно кликать */
+  position: fixed;
+  bottom: 15px;
+  right: 15px;
+  background-color: #fff9db;
+  border: 1px solid #ffd700;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  z-index: 1000;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  user-select: none;
+  cursor: default;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.support-box a,
+.support-box button {
+  font-size: 14px;
 }
 
 .table-wrapper {
@@ -36,6 +42,15 @@ th, td {
   font-size: 16px;
 }
 
+/* Общие стили для всех input/кнопок */
+input, select, button {
+  font-size: 16px;
+  padding: 10px 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
 /* Мобильный стиль */
 @media (max-width: 600px) {
   .container {
@@ -45,5 +60,24 @@ th, td {
   th, td {
     font-size: 14px;
     padding: 6px 8px;
+  }
+
+  input, select, button {
+    font-size: 14px;
+    padding: 6px 10px;
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  body {
+    margin: 10px;
+  }
+
+  .form-container {
+    padding: 10px;
   }
 }
