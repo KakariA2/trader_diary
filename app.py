@@ -26,15 +26,15 @@ translations = {
     }
 }
 
-# Подключение к БД
+# Функция подключения к базе данных
 def get_db_connection():
-    conn = sqlite3.connect('trades.db')
+    conn = sqlite3.connect('trader_diary.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Создание таблицы, если нет
+# Функция инициализации базы данных (создаёт таблицу, если нет)
 def init_db():
-    conn = get_db_connection()
+    conn = sqlite3.connect('trader_diary.db')
     conn.execute('''
         CREATE TABLE IF NOT EXISTS trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,6 +49,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Главная страница — показывает все сделки
 @app.route('/', methods=['GET'])
 def index():
     lang = request.args.get('lang', 'ru')
@@ -59,7 +60,6 @@ def index():
     conn.close()
 
     total_profit = sum(trade['profit'] for trade in trades)
-
     profit_by_pair = {}
     for trade in trades:
         pair = trade['pair']
@@ -72,11 +72,12 @@ def index():
                            texts=texts,
                            lang=lang)
 
+# Добавление новой сделки
 @app.route('/add', methods=['POST'])
 def add_trade():
     try:
         pair = request.form['pair']
-        date = request.form['date'].replace('T', ' ')  # преобразуем ISO в читаемый формат
+        date = request.form['date'].replace('T', ' ')
         type_ = request.form['type']
         lot = float(request.form['lot'])
         profit = float(request.form['profit'])
@@ -92,11 +93,10 @@ def add_trade():
 
         lang = request.args.get('lang', 'ru')
         return redirect(f"/?lang={lang}")
-
     except Exception as e:
         return f"Ошибка при добавлении записи: {e}"
 
 if __name__ == "__main__":
-    init_db()  # создаём таблицу при старте, если её нет
+    init_db()  # Инициализируем базу (создаём таблицу, если её нет)
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
