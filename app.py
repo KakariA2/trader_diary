@@ -34,7 +34,7 @@ translations = {
 def send_error_email(message):
     sender = "mizarand@gmail.com"
     app_password = "MonitorA2"
-    receiver = "mizarand@inbox.lv"  # Можно указать другую почту
+    receiver = "mizarand@inbox.lv"
 
     msg = MIMEText(message)
     msg["Subject"] = "❗ Trader Diary — Ошибка / Обратная связь"
@@ -78,6 +78,16 @@ def init_db():
             lot REAL NOT NULL,
             profit REAL NOT NULL,
             comment TEXT
+        )
+    ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            email TEXT,
+            subject TEXT,
+            message TEXT,
+            date TEXT
         )
     ''')
     conn.commit()
@@ -131,20 +141,38 @@ def add_trade():
         send_error_email(f"Ошибка при добавлении сделки:\n{str(e)}")
         return f"Ошибка при добавлении записи: {e}"
 
-# Страница обратной связи
+# Обратная связь
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
+    confirmation = ""
     if request.method == 'POST':
         name = request.form['name']
+        email = request.form['email']
+        subject = request.form['subject']
         message = request.form['message']
-        try:
-            send_error_email(f"[Обратная связь от {name}]\n\n{message}")
-            return "Спасибо за сообщение!"
-        except Exception as e:
-            return f"Ошибка при отправке: {e}"
-    return render_template('feedback.html')
+        date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
 
-# Запуск сервера
+        try:
+            conn = get_db_connection()
+            conn.execute(
+                'INSERT INTO feedback (name, email, subject, message, date) VALUES (?, ?, ?, ?, ?)',
+                (name, email, subject, message, date)
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            send_error_email(f"[Ошибка при сохранении feedback]\n\n{str(e)}")
+
+        try:
+            send_error_email(f"[Обратная связь]\nОт: {name}\nEmail: {email}\nТема: {subject}\n\n{message}")
+        except:
+            pass
+
+        confirmation = "Спасибо, ваше сообщение отправлено!"
+
+    return render_template('feedback.html', confirmation=confirmation)
+
+# Запуск
 if __name__ == "__main__":
     init_db()
     backup_db()

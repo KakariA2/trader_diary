@@ -55,22 +55,37 @@ input, select, button {
 @media (max-width: 600px) {
   .container {
     padding: 5px;
-  }
-
-  th, td {
-    font-size: 14px;
-    padding: 6px 8px;
+    height: 200px;
+    overflow-y: auto; /* если контент не влезает — прокрутка */
   }
 
   input, select, button {
     font-size: 14px;
-    padding: 6px 10px;
+    padding: 6px 8px;
     width: 100%;
+    box-sizing: border-box;
   }
 
   h1 {
     font-size: 20px;
     margin-bottom: 10px;
+    text-align: center;
+  }
+
+  table, th, td {
+    font-size: 14px;
+    padding: 6px 8px;
+  }
+
+  .support-box {
+    font-size: 12px;
+    padding: 6px 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    max-width: calc(100% - 20px);
+    transform: none;
+    white-space: normal;
   }
 
   body {

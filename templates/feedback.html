@@ -2,16 +2,66 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Обратная связь</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, textarea {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            width: 100%;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .confirmation {
+            margin-top: 15px;
+            color: green;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-    <h1>Напиши нам</h1>
-    <form method="post">
-        <label>Имя:</label><br>
-        <input type="text" name="name" required><br><br>
-        <label>Сообщение:</label><br>
-        <textarea name="message" rows="5" cols="40" required></textarea><br><br>
-        <button type="submit">Отправить</button>
-    </form>
+
+<h2>Обратная связь</h2>
+
+<form method="POST" action="/feedback">
+    <input type="text" name="name" placeholder="Ваше имя" required>
+    <input type="email" name="email" placeholder="Ваша почта" required>
+    <input type="text" name="subject" placeholder="Тема сообщения" required>
+    <textarea name="message" placeholder="Ваше сообщение" rows="5" required></textarea>
+    <button type="submit">📩 Отправить</button>
+</form>
+
+{% if confirmation %}
+    <p class="confirmation">{{ confirmation }}</p>
+{% endif %}
+
 </body>
 </html>

@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Дневник трейдера</title>
+
+    <!-- Скрипт Google AdSense (один раз в <head>) -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753146282257487"
+     crossorigin="anonymous"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -26,11 +31,12 @@
         }
 
         form input, form select, form button {
-            padding: 10px;
-            font-size: 1em;
+            padding: 10px 12px;
+            font-size: 16px;
             border-radius: 5px;
             border: 1px solid #ccc;
             flex: 1 1 200px;
+            box-sizing: border-box;
         }
 
         form button {
@@ -100,6 +106,13 @@
                 align-items: stretch;
             }
 
+            form input, form select, form button {
+                font-size: 14px;
+                padding: 6px 8px;
+                width: 100%;
+                flex: none;
+            }
+
             table, thead, tbody, th, td, tr {
                 font-size: 0.9em;
             }
@@ -108,7 +121,53 @@
                 bottom: 5px;
                 font-size: 12px;
                 padding: 6px 10px;
+                white-space: normal;
+                left: 10px;
+                transform: none;
+                max-width: calc(100% - 20px);
             }
+
+            h1 {
+                font-size: 20px;
+                margin-bottom: 10px;
+            }
+
+            body {
+                margin: 10px;
+            }
+
+            .container {
+                padding: 5px;
+            }
+
+            th, td {
+                font-size: 14px;
+                padding: 6px 8px;
+            }
+        }
+
+        /* Оформление блока партнёрской ссылки */
+        .partner-link {
+            display: inline-block;
+            text-decoration: none;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: #f0f8ff;
+            color: #0077cc;
+            font-weight: bold;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .partner-link:hover {
+            background-color: #0077cc;
+            color: #fff;
+        }
+
+        /* Центрирование рекламы */
+        .adsense-container {
+            margin: 10px auto;
+            text-align: center;
+            max-width: 320px;
         }
     </style>
 </head>
@@ -174,33 +233,57 @@
                 </tbody>
             </table>
         </div>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753146282257487"
+     crossorigin="anonymous"></script>
+<script>
+  (adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-3753146282257487",
+    enable_page_level_ads: true
+  });
+</script>
+       
     </div>
+ <!-- Блок партнёрской ссылки -->
+        <div style="margin: 10px 0; text-align: center;">
+          <a href="https://www.exness.com/ru/partners/?ref=ABC123" target="_blank" rel="noopener noreferrer" class="partner-link">
+            🔗 Партнёрская ссылка
+          </a>
+        </div> <hr>
+   
 
-    <!-- Блок поддержки -->
-    <!-- Блок поддержки -->
-<div class="support-box">
-  <div style="margin-bottom: 5px;">
-    ☕ <strong>Поддержи проект:</strong>
-    <a href="https://buymeacoffee.com/kakari" target="_blank">BuyMeACoffee</a> |
-    <a href="https://yoomoney.ru/to/4100119196832465" target="_blank">ЮMoney</a>
-  </div>
+        <!-- Баннер Google AdSense -->
+        <div class="adsense-container">
+          <ins class="adsbygoogle"
+               style="display:inline-block;width:320px;height:50px"
+               data-ad-client="ca-pub-3753146282257487"
+               data-ad-slot="YOUR_AD_SLOT_HERE"></ins>
+          <script>
+               (adsbygoogle = window.adsbygoogle || []).push({});
+          </script>
+        </div> 
+    <div class="support-box">
+	 <!-- Блок поддержки -->
+	      <div style="margin-bottom: 5px;">
+        ☕ <strong>Поддержи проект:</strong>
+        <a href="https://buymeacoffee.com/kakari" target="_blank" rel="noopener noreferrer">BuyMeACoffee</a> |
+        <a href="https://yoomoney.ru/to/4100119196832465" target="_blank" rel="noopener noreferrer">ЮMoney</a>
+      </div>
 
-  <div style="margin-top: 8px; text-align: center;">
-    <a href="/feedback" style="margin-right: 10px;">📩 Написать сообщение</a>
-    <button id="shareBtn" style="
-      padding: 8px 14px;
-      font-size: 14px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    ">
-      📤 Поделиться с другом
-    </button>
-  </div>
-</div>
-
+      <div style="margin-top: 8px; text-align: center;">
+        <a href="/feedback" style="margin-right: 10px;">📩 Написать сообщение</a>
+        <button id="shareBtn" style="
+          padding: 8px 14px;
+          font-size: 14px;
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+        ">
+          📤 Поделиться с другом
+        </button>
+      </div>
+    </div>
 
 <script>
   document.getElementById('shareBtn').addEventListener('click', async () => {
@@ -219,9 +302,6 @@
     }
   });
 </script>
-
-
-	
 
 </body>
 </html>
