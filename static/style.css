@@ -142,3 +142,30 @@ input, select, button {
     padding: 10px;
   }
 }
+
+/* Твой новый код — переопределение support-box для мобилок */
+@media (max-width: 600px) {
+  .support-box {
+    font-size: 12px;
+    padding: 6px 8px;
+    bottom: 5px;
+    left: 5px;
+    right: 5px;
+    max-width: calc(100% - 10px);
+    transform: none;
+    white-space: normal;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .support-box a, 
+  .support-box button {
+    font-size: 12px;
+    padding: 4px 8px;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 240px;
+  }
+}
