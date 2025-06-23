@@ -11,9 +11,6 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753146282257487"
      crossorigin="anonymous"></script>
 
-    <style>
-        /* можно оставить свой стиль, он уже есть в style.css */
-    </style>
 </head>
 <body>
     <div class="container">
@@ -38,7 +35,6 @@
             </ul>
         </div>
 
-        <!-- Форма добавления сделки -->
         <form action="/add" method="POST">
             <input type="text" name="pair" placeholder="Пара (например, EUR/USD)" required>
             <input type="datetime-local" name="date" required>
@@ -52,26 +48,27 @@
             <button type="submit">💾 Сохранить</button>
         </form>
 
-        <!-- Форма фильтрации по году и месяцу -->
-        <form method="GET" action="/" style="margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-          <label for="year">Год:</label>
-          <select name="year" id="year" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
+        <!-- Форма выбора года и месяца для фильтрации -->
+        <form action="/" method="get" style="text-align: center; margin-bottom: 20px;">
+          <label for="year" style="font-weight: bold; margin-right: 10px;">Выберите год и месяц:</label>
+          
+          <select name="year" id="year" style="padding: 6px 10px; font-size: 16px; margin-right: 10px; border-radius: 5px; border: 1px solid #ccc;">
             {% for y in years %}
               <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
             {% endfor %}
           </select>
 
-          <label for="month">Месяц:</label>
-          <select name="month" id="month" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc;">
-            {% for m in range(1, 13) %}
-              <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>{{ "{:02d}".format(m) }}</option>
+          <select name="month" id="month" style="padding: 6px 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc;">
+            {% for m in months %}
+              <option value="{{ m[0] }}" {% if m[0] == selected_month %}selected{% endif %}>{{ m[1] }}</option>
             {% endfor %}
           </select>
 
-          <button type="submit" style="padding: 6px 12px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Показать</button>
+          <button type="submit" style="padding: 8px 16px; font-size: 16px; margin-left: 15px; border-radius: 5px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
+            Показать
+          </button>
         </form>
 
-        <!-- Таблица сделок -->
         <div class="table-wrapper">
             <table>
                 <thead>
@@ -99,25 +96,25 @@
             </table>
         </div>
 
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753146282257487"
-             crossorigin="anonymous"></script>
-        <script>
-          (adsbygoogle = window.adsbygoogle || []).push({
-            google_ad_client: "ca-pub-3753146282257487",
-            enable_page_level_ads: true
-          });
-        </script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753146282257487"
+     crossorigin="anonymous"></script>
+<script>
+  (adsbygoogle = window.adsbygoogle || []).push({
+    google_ad_client: "ca-pub-3753146282257487",
+    enable_page_level_ads: true
+  });
+</script>
        
     </div>
 	
     <div class="support-box">
-	   <center>
-        <div style="margin-bottom: 5px;">
-          ☕ <strong>Поддержи проект:</strong>
-          <a href="https://buymeacoffee.com/kakari" target="_blank" rel="noopener noreferrer">BuyMeACoffee</a> |
-          <a href="https://yoomoney.ru/to/4100119196832465" target="_blank" rel="noopener noreferrer">ЮMoney</a>
-        </div>
-	   </center>
+	   <center>     
+         <div style="margin-bottom: 5px;">
+            ☕ <strong>Поддержи проект:</strong>
+            <a href="https://buymeacoffee.com/kakari" target="_blank" rel="noopener noreferrer">BuyMeACoffee</a> |
+            <a href="https://yoomoney.ru/to/4100119196832465" target="_blank" rel="noopener noreferrer">ЮMoney</a>
+         </div>
+       </center>
 
       <div style="margin-top: 8px; text-align: center;">
         <a href="/feedback" style="margin-right: 10px;">📩 Написать сообщение</a>

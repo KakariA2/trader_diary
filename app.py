@@ -99,36 +99,33 @@ def index():
     lang = request.args.get('lang', 'ru')
     texts = translations.get(lang, translations['ru'])
 
-    # Получаем год и месяц из параметров GET
-    year = request.args.get('year')
-    month = request.args.get('month')
+    from datetime import datetime
 
-    now = datetime.datetime.now()
-    if not year or not year.isdigit():
-        year = now.year
-    else:
-        year = int(year)
+    # Получаем выбранные год и месяц, или ставим текущие
+    try:
+        selected_year = int(request.args.get('year', datetime.now().year))
+        selected_month = int(request.args.get('month', datetime.now().month))
+    except ValueError:
+        selected_year = datetime.now().year
+        selected_month = datetime.now().month
 
-    if not month or not month.isdigit():
-        month = now.month
-    else:
-        month = int(month)
+    current_year = datetime.now().year
+    years = list(range(current_year - 4, current_year + 1))
 
-    # Формируем даты для фильтрации
-    start_date = f"{year}-{month:02d}-01 00:00"
-    if month == 12:
-        end_year = year + 1
-        end_month = 1
-    else:
-        end_year = year
-        end_month = month + 1
-    end_date = f"{end_year}-{end_month:02d}-01 00:00"
+    months = [
+        (1, "Январь"), (2, "Февраль"), (3, "Март"), (4, "Апрель"),
+        (5, "Май"), (6, "Июнь"), (7, "Июль"), (8, "Август"),
+        (9, "Сентябрь"), (10, "Октябрь"), (11, "Ноябрь"), (12, "Декабрь")
+    ]
 
     conn = get_db_connection()
-    trades = conn.execute(
-        "SELECT * FROM trades WHERE date >= ? AND date < ? ORDER BY date DESC",
-        (start_date, end_date)
-    ).fetchall()
+
+    query = """
+        SELECT * FROM trades
+        WHERE strftime('%Y', date) = ? AND strftime('%m', date) = ?
+        ORDER BY date DESC
+    """
+    trades = conn.execute(query, (str(selected_year), f"{selected_month:02d}")).fetchall()
     conn.close()
 
     total_profit = sum(trade['profit'] for trade in trades)
@@ -137,8 +134,6 @@ def index():
         pair = trade['pair']
         profit_by_pair[pair] = profit_by_pair.get(pair, 0) + trade['profit']
 
-    years = list(range(2020, now.year + 1))
-
     return render_template('index.html',
                            trades=trades,
                            total_profit=total_profit,
@@ -146,8 +141,9 @@ def index():
                            texts=texts,
                            lang=lang,
                            years=years,
-                           selected_year=year,
-                           selected_month=month)
+                           months=months,
+                           selected_year=selected_year,
+                           selected_month=selected_month)
 
 # Добавление сделки
 @app.route('/add', methods=['POST'])
