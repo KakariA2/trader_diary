@@ -19,6 +19,8 @@
   cursor: default;
   opacity: 1;
   pointer-events: auto;
+  white-space: nowrap;
+  max-width: calc(100% - 40px);
 }
 
 .support-box a,
@@ -49,6 +51,38 @@ input, select, button {
   border-radius: 5px;
   border: 1px solid #ccc;
   box-sizing: border-box;
+}
+
+/* Новые стили для партнёрской ссылки */
+.partner-link {
+  display: inline-block;
+  text-decoration: none;
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  border-radius: 5px;
+  background-color: #f0f8ff;
+  color: #0077cc;
+  font-weight: bold;
+  transition: background-color 0.3s, color 0.3s;
+  max-width: 320px;
+  white-space: nowrap; /* не переносить текст */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 auto;
+}
+
+.partner-link:hover {
+  background-color: #0077cc;
+  color: #fff;
+}
+
+/* Новые стили для блока рекламы Google AdSense */
+.adsense-container {
+  margin: 10px auto;
+  text-align: center;
+  max-width: 320px;
+  height: 50px; /* фиксированная высота под баннер */
+  overflow: hidden;
 }
 
 /* Мобильный стиль */
@@ -86,6 +120,18 @@ input, select, button {
     max-width: calc(100% - 20px);
     transform: none;
     white-space: normal;
+  }
+
+  /* Мобильные настройки для партнёрской ссылки */
+  .partner-link {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  /* Мобильные настройки для рекламы */
+  .adsense-container {
+    max-width: 100%;
+    height: 50px;
   }
 
   body {
