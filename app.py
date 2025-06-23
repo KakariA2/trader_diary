@@ -93,14 +93,42 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Главная страница
+# Главная страница с фильтром по году и месяцу
 @app.route('/', methods=['GET'])
 def index():
     lang = request.args.get('lang', 'ru')
     texts = translations.get(lang, translations['ru'])
 
+    # Получаем год и месяц из параметров GET
+    year = request.args.get('year')
+    month = request.args.get('month')
+
+    now = datetime.datetime.now()
+    if not year or not year.isdigit():
+        year = now.year
+    else:
+        year = int(year)
+
+    if not month or not month.isdigit():
+        month = now.month
+    else:
+        month = int(month)
+
+    # Формируем даты для фильтрации
+    start_date = f"{year}-{month:02d}-01 00:00"
+    if month == 12:
+        end_year = year + 1
+        end_month = 1
+    else:
+        end_year = year
+        end_month = month + 1
+    end_date = f"{end_year}-{end_month:02d}-01 00:00"
+
     conn = get_db_connection()
-    trades = conn.execute('SELECT * FROM trades ORDER BY id DESC').fetchall()
+    trades = conn.execute(
+        "SELECT * FROM trades WHERE date >= ? AND date < ? ORDER BY date DESC",
+        (start_date, end_date)
+    ).fetchall()
     conn.close()
 
     total_profit = sum(trade['profit'] for trade in trades)
@@ -109,12 +137,17 @@ def index():
         pair = trade['pair']
         profit_by_pair[pair] = profit_by_pair.get(pair, 0) + trade['profit']
 
+    years = list(range(2020, now.year + 1))
+
     return render_template('index.html',
                            trades=trades,
                            total_profit=total_profit,
                            profit_by_pair=profit_by_pair,
                            texts=texts,
-                           lang=lang)
+                           lang=lang,
+                           years=years,
+                           selected_year=year,
+                           selected_month=month)
 
 # Добавление сделки
 @app.route('/add', methods=['POST'])
