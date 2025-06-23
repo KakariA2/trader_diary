@@ -86,7 +86,7 @@ input, select, button {
 }
 
 /* Мобильный стиль */
-@media (max-width: 600px) {
+@media (max-width: 50px) {
   .container {
     padding: 5px;
     height: 200px;
