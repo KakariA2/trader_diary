@@ -54,6 +54,15 @@
   </style>
 </head>
 <body>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div style="color: red; text-align: center; margin-bottom: 10px;">
+      {% for message in messages %}
+        <p>{{ message }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
   <div class="form-container">
     <h2>🔐 Вход</h2>
     <form method="POST">
