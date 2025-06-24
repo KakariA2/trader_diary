@@ -8,7 +8,8 @@
 .support-box {
   position: fixed;
   bottom: 15px;
-  right: 15px;
+  right: 50px;
+  transform: translateX(-50%);
   background-color: #fff9db;
   border: 1px solid #ffd700;
   border-radius: 8px;
@@ -132,7 +133,8 @@ input, select, button {
     right: 10px;
     bottom: 10px;
     max-width: calc(100% - 20px);
-    transform: none;
+  transform: none; 
+    /*  transform: translateX(-50%); */
     white-space: normal;
   }
 
