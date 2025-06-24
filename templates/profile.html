@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Профиль — Дневник трейдера</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <h2>Профиль пользователя</h2>
+  <p><strong>Имя:</strong> {{ user.username }}</p>
+  <p><strong>Email:</strong> {{ user.email }}</p>
+  <p><strong>Статус подписки:</strong> {{ user.subscription_status }}</p>
+  <p><a href="{{ url_for('logout') }}">Выйти</a></p>
+</body>
+</html>

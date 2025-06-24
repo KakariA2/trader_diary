@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Регистрация — Дневник трейдера</title>
@@ -53,6 +52,13 @@
     .form-container a:hover {
       text-decoration: underline;
     }
+    #user-exists {
+      color: red;
+      display: none;
+      margin-top: -10px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -73,39 +79,16 @@
       <input type="email" name="email" placeholder="Email" required />
       <input type="password" name="password" placeholder="Пароль" required />
       <input type="password" name="confirm_password" placeholder="Повторите пароль" required />
+      <p id="user-exists">Такой логин или email уже зарегистрирован</p>
       <button type="submit">Зарегистрироваться</button>
-	  <p id="user-exists" style="color: red; display: none;">Такой логин или email уже зарегистрирован</p>
     </form>
     <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
   </div>
-  <script>
+
+<script>
 const usernameInput = document.querySelector('input[name="username"]');
 const emailInput = document.querySelector('input[name="email"]');
 const warning = document.getElementById("user-exists");
-
-async function checkUserExists() {
-    const username = usernameInput.value.trim();
-    const email = emailInput.value.trim();
-
-    if (username.length < 3 && email.length < 5) {
-        warning.style.display = "none";
-        return;
-    }
-
-    const response = await fetch("/check_user", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, email }),
-    });
-
-    const result = await response.json();
-    warning.style.display = result.exists ? "block" : "none";
-}
-
-usernameInput.addEventListener("input", checkUserExists);
-emailInput.addEventListener("input", checkUserExists);
 const registerButton = document.querySelector('button[type="submit"]');
 
 async function checkUserExists() {
@@ -131,7 +114,9 @@ async function checkUserExists() {
     registerButton.disabled = result.exists;
 }
 
+usernameInput.addEventListener("input", checkUserExists);
+emailInput.addEventListener("input", checkUserExists);
 </script>
 
-  </body>
+</body>
 </html>
