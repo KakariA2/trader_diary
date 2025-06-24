@@ -1,4 +1,3 @@
-
 .container {
   max-width: 900px;
   margin: 0 auto;
@@ -8,8 +7,9 @@
 .support-box {
   position: fixed;
   bottom: 15px;
-  right: 50px;
+  left: 50%;
   transform: translateX(-50%);
+  right: auto;
   background-color: #fff9db;
   border: 1px solid #ffd700;
   border-radius: 8px;
@@ -23,8 +23,6 @@
   pointer-events: auto;
   white-space: nowrap;
   max-width: calc(100% - 40px);
-  left: 50%;
-
 }
 
 .support-box a,
@@ -48,7 +46,7 @@ th, td {
   font-size: 16px;
 }
 
-/* /* Общие стили для всех input/кнопок */
+/* Общие стили для всех input/кнопок */
 input, select, button {
   font-size: 16px;
   padding: 10px 15px;
@@ -69,7 +67,7 @@ input, select, button {
   font-weight: bold;
   transition: background-color 0.3s, color 0.3s;
   max-width: 320px;
-  white-space: nowrap; /* не переносить текст */
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin: 0 auto;
@@ -85,27 +83,26 @@ input, select, button {
   margin: 10px auto;
   text-align: center;
   max-width: 320px;
-  height: 50px; /* фиксированная высота под баннер */
+  height: 50px;
   overflow: hidden;
 }
 
 /* Мобильный стиль */
 @media (max-width: 600px) {
   .support-box {
-    font-size: 11px;
-    padding: 4px 6px;
-	padding-bottom: 140px;
-    bottom: 5px;
-    left: 5px;
-    right: 5px;
-    max-width: calc(100% - 10px);
+    font-size: 12px;
+    padding: 6px 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    max-width: calc(100% - 20px);
     transform: none;
     white-space: normal;
     text-align: center;
     display: flex;
     flex-direction: column;
     gap: 3px;
-    background-color: rgba(255, 249, 219, 0.95); /* Чуть прозрачный фон */
+    background-color: rgba(255, 249, 219, 0.95);
   }
 
   input, select, button {
@@ -126,25 +123,11 @@ input, select, button {
     padding: 6px 8px;
   }
 
-  .support-box {
-    font-size: 12px;
-    padding: 6px 10px;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    max-width: calc(100% - 20px);
-  transform: none; 
-    /*  transform: translateX(-50%); */
-    white-space: normal;
-  }
-
-   /* Мобильные настройки для партнёрской ссылки */
   .partner-link {
     max-width: 100%;
     white-space: normal;
   }
 
- /* Мобильные настройки для рекламы */
   .adsense-container {
     max-width: 100%;
     height: 50px;
