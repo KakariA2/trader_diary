@@ -106,6 +106,31 @@ async function checkUserExists() {
 
 usernameInput.addEventListener("input", checkUserExists);
 emailInput.addEventListener("input", checkUserExists);
+const registerButton = document.querySelector('button[type="submit"]');
+
+async function checkUserExists() {
+    const username = usernameInput.value.trim();
+    const email = emailInput.value.trim();
+
+    if (username.length < 3 && email.length < 5) {
+        warning.style.display = "none";
+        registerButton.disabled = false;
+        return;
+    }
+
+    const response = await fetch("/check_user", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, email }),
+    });
+
+    const result = await response.json();
+    warning.style.display = result.exists ? "block" : "none";
+    registerButton.disabled = result.exists;
+}
+
 </script>
 
   </body>
