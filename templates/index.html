@@ -1,154 +1,141 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<!-- Подключение Google Fonts Roboto -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
-	<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<table>
-	<tr><td><p id="datetime"></p>
-<script>
-function updateDateTime() {
-    const now = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
-    const date = now.toLocaleDateString('ru-RU', options);
-    const time = now.toLocaleTimeString('ru-RU');
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Дневник трейдера</title>
 
-    document.getElementById("datetime").innerHTML = `Сегодня: ${date}<br>Текущее время: ${time}`;
-}
+  <!-- Шрифт -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 
-// Обновлять каждую секунду
-setInterval(updateDateTime, 1000);
-updateDateTime();
-</script> </td>
-<td>{% if session.get('username') %}
-  <p>Привет, {{ session['username'] }}! 
-    <a href="{{ url_for('logout') }}">🔒 Выйти</a>
-  </p>
-{% else %}
-  <p>
-    <a href="{{ url_for('login') }}">Вход</a> | 
-    <a href="{{ url_for('register') }}">Регистрация</a>
-  </p>
-{% endif %}</td></tr>
-	
-	</table>
-	
-
-    <title>Дневник трейдера</title>
-
-    <!-- Скрипт Google AdSense (один раз в <head>) -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753146282257487"
-     crossorigin="anonymous"></script>
-
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753146282257487" crossorigin="anonymous"></script>
 </head>
+
 <body>
-    <div class="container">
-        <h1>Дневник трейдера</h1>
 
-        <div style="margin-top: 20px;">
-            <h3>{{ texts['total_profit'] }}:
-                <span style="color: {{ 'green' if total_profit >= 0 else 'red' }}">
-                    {{ total_profit }}
-                </span>
-            </h3>
+  <!-- Верхняя панель с временем и логином -->
+  <table style="width: 100%; padding: 10px;">
+    <tr>
+      <td>
+        <p id="datetime"></p>
+        <script>
+          function updateDateTime() {
+              const now = new Date();
+              const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+              const date = now.toLocaleDateString('ru-RU', options);
+              const time = now.toLocaleTimeString('ru-RU');
+              document.getElementById("datetime").innerHTML = `Сегодня: ${date}<br>Текущее время: ${time}`;
+          }
+          setInterval(updateDateTime, 1000);
+          updateDateTime();
+        </script>
+      </td>
+      <td style="text-align: right;">
+        {% if session.get('username') %}
+          <p>Привет, {{ session['username'] }}!
+            <a href="{{ url_for('logout') }}">🔒 Выйти</a>
+          </p>
+        {% else %}
+          <p>
+            <a href="{{ url_for('login') }}">Вход</a> |
+            <a href="{{ url_for('register') }}">Регистрация</a>
+          </p>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
 
-            <h4>{{ texts['profit_by_pair'] }}:</h4>
-            <ul>
-                {% for pair, profit in profit_by_pair.items() %}
-                    <li>{{ pair }}:
-                        <span style="color: {{ 'green' if profit >= 0 else 'red' }}">
-                            {{ profit }}
-                        </span>
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
+  <div class="container">
+    <h1>Дневник трейдера</h1>
 
-        <form action="/add" method="POST">
-            <input type="text" name="pair" placeholder="Пара (например, EUR/USD)" required>
-            <input type="datetime-local" name="date" required>
-            <select name="type">
-                <option value="Buy">Купить</option>
-                <option value="Sell">Продать</option>
-            </select>
-            <input type="number" name="lot" step="0.01" placeholder="Лот" required>
-            <input type="number" name="profit" step="0.01" placeholder="Прибыль/Убыток" required>
-            <input type="text" name="comment" placeholder="Комментарий">
-            <button type="submit">💾 Сохранить</button>
-        </form>
-	<p>
-	<hr>
+    <div style="margin-top: 20px;">
+      <h3>{{ texts['total_profit'] }}:
+        <span style="color: {{ 'green' if total_profit >= 0 else 'red' }}">{{ total_profit }}</span>
+      </h3>
 
-        <!-- Форма выбора года и месяца для фильтрации -->
-        <form action="/" method="get" style="text-align: center; margin-bottom: 20px;">
-          <label for="year" style="font-weight: bold; margin-right: 10px;">Выберите год и месяц:</label>
-          
-          <select name="year" id="year" style="padding: 6px 10px; font-size: 16px; margin-right: 10px; border-radius: 5px; border: 1px solid #ccc;">
-            {% for y in years %}
-              <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
-            {% endfor %}
-          </select>
-
-          <select name="month" id="month" style="padding: 6px 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc;">
-            {% for m in months %}
-              <option value="{{ m[0] }}" {% if m[0] == selected_month %}selected{% endif %}>{{ m[1] }}</option>
-            {% endfor %}
-          </select>
-
-          <button type="submit" style="padding: 8px 16px; font-size: 16px; margin-left: 15px; border-radius: 5px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
-            Показать
-          </button>
-        </form>
-		<hr>
-
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Пара</th>
-                        <th>Дата</th>
-                        <th>Тип</th>
-                        <th>Лот</th>
-                        <th>Прибыль/Убыток</th>
-                        <th>Комментарий</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for trade in trades %}
-                    <tr>
-                        <td>{{ trade.pair }}</td>
-                        <td>{{ trade.date }}</td>
-                        <td>{{ trade.type }}</td>
-                        <td>{{ trade.lot }}</td>
-                        <td>{{ trade.profit }}</td>
-                        <td>{{ trade.comment }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753146282257487"
-     crossorigin="anonymous"></script>
-<script>
-  (adsbygoogle = window.adsbygoogle || []).push({
-    google_ad_client: "ca-pub-3753146282257487",
-    enable_page_level_ads: true
-  });
-</script>
-       
+      <h4>{{ texts['profit_by_pair'] }}:</h4>
+      <ul>
+        {% for pair, profit in profit_by_pair.items() %}
+          <li>{{ pair }}:
+            <span style="color: {{ 'green' if profit >= 0 else 'red' }}">{{ profit }}</span>
+          </li>
+        {% endfor %}
+      </ul>
     </div>
-	
+
+    <!-- Форма добавления сделки -->
+    <form action="/add" method="POST">
+      <input type="text" name="pair" placeholder="Пара (например, EUR/USD)" required>
+      <input type="datetime-local" name="date" required>
+      <select name="type">
+        <option value="Buy">Купить</option>
+        <option value="Sell">Продать</option>
+      </select>
+      <input type="number" name="lot" step="0.01" placeholder="Лот" required>
+      <input type="number" name="profit" step="0.01" placeholder="Прибыль/Убыток" required>
+      <input type="text" name="comment" placeholder="Комментарий">
+      <button type="submit">💾 Сохранить</button>
+    </form>
+
+    <hr>
+
+    <!-- Фильтр по дате -->
+    <form action="/" method="get" style="text-align: center; margin-bottom: 20px;">
+      <label for="year" style="font-weight: bold; margin-right: 10px;">Выберите год и месяц:</label>
+      <select name="year" id="year" style="padding: 6px 10px; font-size: 16px; margin-right: 10px; border-radius: 5px; border: 1px solid #ccc;">
+        {% for y in years %}
+          <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+      <select name="month" id="month" style="padding: 6px 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc;">
+        {% for m in months %}
+          <option value="{{ m[0] }}" {% if m[0] == selected_month %}selected{% endif %}>{{ m[1] }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" style="padding: 8px 16px; font-size: 16px; margin-left: 15px; border-radius: 5px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">Показать</button>
+    </form>
+
+    <hr>
+
+    <!-- Таблица сделок -->
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Пара</th>
+            <th>Дата</th>
+            <th>Тип</th>
+            <th>Лот</th>
+            <th>Прибыль/Убыток</th>
+            <th>Комментарий</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for trade in trades %}
+          <tr>
+            <td>{{ trade.pair }}</td>
+            <td>{{ trade.date }}</td>
+            <td>{{ trade.type }}</td>
+            <td>{{ trade.lot }}</td>
+            <td class="{{ 'positive' if trade.profit >= 0 else 'negative' }}">{{ trade.profit }}</td>
+            <td>{{ trade.comment }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Поддержка и кнопка Поделиться -->
     <div class="support-box">
-	   <center>     
-         <div style="margin-bottom: 5px;">
-            ☕ <strong>Поддержи проект:</strong>
-            <a href="https://buymeacoffee.com/kakari" target="_blank" rel="noopener noreferrer">BuyMeACoffee</a> |
-            <a href="https://yoomoney.ru/to/4100119196832465" target="_blank" rel="noopener noreferrer">ЮMoney</a>
-         </div>
-       </center>
+      <center>
+        <div style="margin-bottom: 5px;">
+          ☕ <strong>Поддержи проект:</strong>
+          <a href="https://buymeacoffee.com/kakari" target="_blank">BuyMeACoffee</a> |
+          <a href="https://yoomoney.ru/to/4100119196832465" target="_blank">ЮMoney</a>
+        </div>
+      </center>
 
       <div style="margin-top: 8px; text-align: center;">
         <a href="/feedback" style="margin-right: 10px;">📩 Написать сообщение</a>
@@ -166,23 +153,26 @@ updateDateTime();
       </div>
     </div>
 
-<script>
-  document.getElementById('shareBtn').addEventListener('click', async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Дневник трейдера',
-          text: 'Попробуй этот полезный проект: Дневник трейдера 📈',
-          url: window.location.href
-        });
-      } catch (err) {
-        console.log('Ошибка при попытке поделиться:', err);
+  </div>
+
+  <!-- Скрипт Поделиться -->
+  <script>
+    document.getElementById('shareBtn').addEventListener('click', async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Дневник трейдера',
+            text: 'Попробуй этот полезный проект: Дневник трейдера 📈',
+            url: window.location.href
+          });
+        } catch (err) {
+          console.log('Ошибка при попытке поделиться:', err);
+        }
+      } else {
+        alert('Функция «Поделиться» не поддерживается. Просто скопируй ссылку.');
       }
-    } else {
-      alert('Функция «Поделиться» не поддерживается на этом устройстве. Просто скопируй ссылку из адресной строки.');
-    }
-  });
-</script>
+    });
+  </script>
 
 </body>
 </html>
