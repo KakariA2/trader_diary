@@ -1,12 +1,14 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session, url_for, flash
 import sqlite3
 import os
 import shutil
 import datetime
 import smtplib
 from email.mime.text import MIMEText
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+app.secret_key = 'trader_diary_secret_key'  # секрет для сессий
 
 # Переводы
 translations = {
@@ -30,7 +32,7 @@ translations = {
     }
 }
 
-# Отправка email при ошибках и для обратной связи
+# ======= Email при ошибках =======
 def send_error_email(message):
     sender = "mizarand@gmail.com"
     app_password = "MonitorA2"
@@ -48,7 +50,7 @@ def send_error_email(message):
     except Exception as e:
         print(f"[Email] Ошибка при отправке письма: {e}")
 
-# Создание бэкапа базы данных
+# ======= Бэкап базы данных =======
 def backup_db():
     now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
     backup_path = f"backup/trader_diary_backup_{now}.db"
@@ -60,13 +62,13 @@ def backup_db():
     except Exception as e:
         print(f"[Бэкап] Ошибка при создании бэкапа: {e}")
 
-# Подключение к базе
+# ======= Подключение к БД =======
 def get_db_connection():
     conn = sqlite3.connect('trader_diary.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Инициализация базы
+# ======= Инициализация БД =======
 def init_db():
     conn = sqlite3.connect('trader_diary.db')
     conn.execute('''
@@ -90,18 +92,28 @@ def init_db():
             date TEXT
         )
     ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            subscription_status TEXT NOT NULL DEFAULT 'trial',
+            trial_start_date TEXT,
+            premium_end_date TEXT
+        )
+    ''')
     conn.commit()
     conn.close()
 
-# Главная страница с фильтром по году и месяцу
-@app.route('/', methods=['GET'])
+# ======= Главная страница =======
+@app.route('/')
 def index():
     lang = request.args.get('lang', 'ru')
     texts = translations.get(lang, translations['ru'])
 
     from datetime import datetime
 
-    # Получаем выбранные год и месяц, или ставим текущие
     try:
         selected_year = int(request.args.get('year', datetime.now().year))
         selected_month = int(request.args.get('month', datetime.now().month))
@@ -119,7 +131,6 @@ def index():
     ]
 
     conn = get_db_connection()
-
     query = """
         SELECT * FROM trades
         WHERE strftime('%Y', date) = ? AND strftime('%m', date) = ?
@@ -145,7 +156,7 @@ def index():
                            selected_year=selected_year,
                            selected_month=selected_month)
 
-# Добавление сделки
+# ======= Добавление сделки =======
 @app.route('/add', methods=['POST'])
 def add_trade():
     try:
@@ -170,7 +181,7 @@ def add_trade():
         send_error_email(f"Ошибка при добавлении сделки:\n{str(e)}")
         return f"Ошибка при добавлении записи: {e}"
 
-# Обратная связь
+# ======= Обратная связь =======
 @app.route('/feedback', methods=['GET', 'POST'])
 def feedback():
     confirmation = ""
@@ -201,7 +212,61 @@ def feedback():
 
     return render_template('feedback.html', confirmation=confirmation)
 
-# Запуск
+# ======= Регистрация =======
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        hashed_password = generate_password_hash(password)
+
+        conn = get_db_connection()
+        try:
+            conn.execute(
+                "INSERT INTO users (username, email, password_hash, subscription_status, trial_start_date) VALUES (?, ?, ?, 'trial', ?)",
+                (username, email, hashed_password, datetime.datetime.now().strftime('%Y-%m-%d'))
+            )
+            conn.commit()
+            flash('Регистрация успешна! Войдите в систему.')
+            return redirect('/login')
+        except sqlite3.IntegrityError:
+            flash('Такой пользователь уже существует.')
+        finally:
+            conn.close()
+
+    return render_template('register.html')
+
+# ======= Вход =======
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        conn = get_db_connection()
+        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        conn.close()
+
+        if user and check_password_hash(user['password_hash'], password):
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session['subscription_status'] = user['subscription_status']
+            flash(f'Добро пожаловать, {user["username"]}!')
+            return redirect('/')
+        else:
+            flash('Неверный email или пароль.')
+
+    return render_template('login.html')
+
+# ======= Выход =======
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Вы вышли из системы.')
+    return redirect('/')
+
+# ======= Запуск =======
 if __name__ == "__main__":
     init_db()
     backup_db()

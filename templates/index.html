@@ -4,7 +4,36 @@
 	<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<table>
+	<tr><td><p id="datetime"></p>
+<script>
+function updateDateTime() {
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+    const date = now.toLocaleDateString('ru-RU', options);
+    const time = now.toLocaleTimeString('ru-RU');
+
+    document.getElementById("datetime").innerHTML = `Сегодня: ${date}<br>Текущее время: ${time}`;
+}
+
+// Обновлять каждую секунду
+setInterval(updateDateTime, 1000);
+updateDateTime();
+</script> </td>
+<td>{% if session.get('username') %}
+  <p>Привет, {{ session['username'] }}! 
+    <a href="{{ url_for('logout') }}">🔒 Выйти</a>
+  </p>
+{% else %}
+  <p>
+    <a href="{{ url_for('login') }}">Вход</a> | 
+    <a href="{{ url_for('register') }}">Регистрация</a>
+  </p>
+{% endif %}</td></tr>
 	
+	</table>
+	
+
     <title>Дневник трейдера</title>
 
     <!-- Скрипт Google AdSense (один раз в <head>) -->
