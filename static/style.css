@@ -1,33 +1,67 @@
-.container {
-  max-width: 900px;
-  margin: 0 auto;
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+body {
+  font-family: 'Roboto', Arial, sans-serif;
+  background: #f5f5f5;
+  margin: 10px;
   padding: 10px;
+  color: #333;
 }
 
-.support-box {
-  position: fixed;
-  bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  right: auto;
-  background-color: #fff9db;
-  border: 1px solid #ffd700;
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 14px;
-  z-index: 1000;
-  box-shadow: 0 0 5px rgba(0,0,0,0.1);
-  user-select: none;
-  cursor: default;
-  opacity: 1;
-  pointer-events: auto;
-  white-space: nowrap;
-  max-width: calc(100% - 40px);
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.support-box a,
-.support-box button {
-  font-size: 14px;
+h1 {
+  text-align: center;
+  color: #222;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+form input, form select {
+  flex: 1 1 180px;
+  padding: 12px 15px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+form input:focus, form select:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+}
+
+form button {
+  padding: 14px 20px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  flex: 0 0 160px;
+  transition: background-color 0.3s ease;
+}
+
+form button:hover {
+  background-color: #45a049;
 }
 
 .table-wrapper {
@@ -37,107 +71,116 @@
 table {
   width: 100%;
   border-collapse: collapse;
-}
-
-th, td {
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  text-align: left;
-  font-size: 16px;
-}
-
-/* Общие стили для всех input/кнопок */
-input, select, button {
-  font-size: 16px;
-  padding: 10px 15px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-}
-
-/* Новые стили для партнёрской ссылки */
-.partner-link {
-  display: inline-block;
-  text-decoration: none;
-  border: 1px solid #ccc;
-  padding: 5px 10px;
-  border-radius: 5px;
-  background-color: #f0f8ff;
-  color: #0077cc;
-  font-weight: bold;
-  transition: background-color 0.3s, color 0.3s;
-  max-width: 320px;
-  white-space: nowrap;
+  background-color: white;
+  border-radius: 8px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0 auto;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
 }
 
-.partner-link:hover {
-  background-color: #0077cc;
-  color: #fff;
+thead {
+  background-color: #eaeaea;
 }
 
-/* Новые стили для блока рекламы Google AdSense */
-.adsense-container {
-  margin: 10px auto;
+thead th {
+  padding: 12px;
+  font-weight: 600;
   text-align: center;
-  max-width: 320px;
-  height: 50px;
-  overflow: hidden;
+  color: #555;
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #fafafa;
+}
+
+tbody tr:hover {
+  background-color: #f1fdf1;
+}
+
+tbody td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+  font-size: 15px;
+  color: #444;
+}
+
+.support-box {
+  position: fixed;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(255, 249, 219, 0.95);
+  border: 1px solid #ffd700;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  z-index: 1000;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+  user-select: none;
+  cursor: default;
+  white-space: nowrap;
+  max-width: 95%;
+  max-width: calc(100% - 40px);
+  text-align: center;
+}
+
+.support-box a {
+  color: #007BFF;
+  font-weight: 600;
+  margin: 0 8px;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.support-box a:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+.support-box button {
+  font-size: 14px;
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.support-box button:hover {
+  background-color: #45a049;
 }
 
 /* Мобильный стиль */
 @media (max-width: 600px) {
-  .support-box {
-    font-size: 12px;
-    padding: 6px 10px;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    max-width: calc(100% - 20px);
-    transform: none;
-    white-space: normal;
-    text-align: center;
-    display: flex;
+  form {
     flex-direction: column;
-    gap: 3px;
-    background-color: rgba(255, 249, 219, 0.95);
   }
 
-  input, select, button {
-    font-size: 14px;
-    padding: 6px 8px;
+  form input, form select, form button {
+    flex: none;
     width: 100%;
-    box-sizing: border-box;
   }
 
   h1 {
-    font-size: 20px;
-    margin-bottom: 10px;
-    text-align: center;
+    font-size: 24px;
+    margin-bottom: 15px;
   }
 
-  table, th, td {
+  tbody td {
     font-size: 14px;
-    padding: 6px 8px;
+    padding: 10px 8px;
   }
 
-  .partner-link {
-    max-width: 100%;
+  .support-box {
+    font-size: 12px;
+    padding: 10px 12px;
+    bottom: 5px;
+    left: 10px;
+    right: 10px;
     white-space: normal;
-  }
-
-  .adsense-container {
-    max-width: 100%;
-    height: 50px;
-  }
-
-  body {
-    margin: 10px;
-  }
-
-  .form-container {
-    padding: 10px;
+    max-width: calc(100% - 20px);
+    transform: none;
   }
 }

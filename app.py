@@ -35,7 +35,7 @@ translations = {
 # ======= Email при ошибках =======
 def send_error_email(message):
     sender = "mizarand@gmail.com"
-    app_password = "MonitorA2"
+    app_password = os.environ.get("APP_EMAIL_PASSWORD", "MonitorA2")  # лучше задать через env
     receiver = "mizarand@inbox.lv"
 
     msg = MIMEText(message)
@@ -216,9 +216,15 @@ def feedback():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if password != confirm_password:
+            flash('Пароли не совпадают.')
+            return redirect('/register')
+
         hashed_password = generate_password_hash(password)
 
         conn = get_db_connection()
@@ -241,8 +247,8 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
 
         conn = get_db_connection()
         user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
