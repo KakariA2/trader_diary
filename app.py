@@ -184,7 +184,17 @@ def login():
         else:
             flash("Неверный email или пароль.")
     return render_template('login.html')
-
+    
+@app.route('/clear', methods=['GET'])
+def clear_database():
+    conn = get_db_connection()
+    conn.execute("DELETE FROM users")
+    conn.execute("DELETE FROM trades")
+    conn.execute("DELETE FROM feedback")
+    conn.commit()
+    conn.close()
+    return "✅ База данных успешно очищена."
+    
 @app.route('/logout')
 def logout():
     session.clear()
