@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, session, flash, jsonify
 import sqlite3
 import os
 import shutil
@@ -59,7 +59,7 @@ def init_db():
 # ==================== EMAIL ====================
 def send_email(to_email, subject, message_body):
     sender = "mizarand@gmail.com"
-    app_password = "yiakaceuukylohfz"  # Лучше хранить в переменных окружения!
+    app_password = "yiakaceuukylohfz"  # Лучше хранить в .env
 
     msg = MIMEText(message_body, "plain", "utf-8")
     msg["Subject"] = subject
@@ -149,18 +149,6 @@ def verify_email(token):
     conn.close()
     return redirect('/login')
 
-@app.route('/check_user', methods=['POST'])
-def check_user():
-    data = request.get_json()
-    username = data.get('username', '').strip()
-    email = data.get('email', '').strip()
-
-    conn = get_db_connection()
-    user = conn.execute("SELECT * FROM users WHERE username = ? OR email = ?", (username, email)).fetchone()
-    conn.close()
-
-    return jsonify({'exists': bool(user)})
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -190,40 +178,6 @@ def logout():
     session.clear()
     flash("Вы вышли из системы.")
     return redirect('/login')
-
-@app.route('/clear_users')
-def clear_users():
-    conn = get_db_connection()
-    conn.execute('DELETE FROM users')
-    conn.commit()
-    conn.close()
-    return '✅ Таблица пользователей очищена.'
-
-@app.route('/clear_trades')
-def clear_trades():
-    conn = get_db_connection()
-    conn.execute('DELETE FROM trades')
-    conn.commit()
-    conn.close()
-    return '✅ Таблица сделок очищена.'
-
-@app.route('/clear_feedback')
-def clear_feedback():
-    conn = get_db_connection()
-    conn.execute('DELETE FROM feedback')
-    conn.commit()
-    conn.close()
-    return '✅ Таблица обратной связи очищена.'
-
-@app.route('/reset_db')
-def reset_db():
-    try:
-        if os.path.exists('trader_diary.db'):
-            os.remove('trader_diary.db')
-        init_db()
-        return '✅ База данных успешно очищена и пересоздана.'
-    except Exception as e:
-        return f'❌ Ошибка при сбросе базы: {e}'
 
 @app.route('/profile')
 def profile():
