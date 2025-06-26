@@ -59,7 +59,7 @@ def init_db():
 # ==================== EMAIL ====================
 def send_email(to_email, subject, message_body):
     sender = "mizarand@gmail.com"
-    app_password = "yiakaceuukylohfz"  # Лучше хранить в .env
+    app_password = "yiakaceuukylohfz"  # Лучше хранить в переменных окружения!
 
     msg = MIMEText(message_body, "plain", "utf-8")
     msg["Subject"] = subject
@@ -190,6 +190,30 @@ def logout():
     session.clear()
     flash("Вы вышли из системы.")
     return redirect('/login')
+
+@app.route('/clear_users')
+def clear_users():
+    conn = get_db_connection()
+    conn.execute('DELETE FROM users')
+    conn.commit()
+    conn.close()
+    return '✅ Таблица пользователей очищена.'
+
+@app.route('/clear_trades')
+def clear_trades():
+    conn = get_db_connection()
+    conn.execute('DELETE FROM trades')
+    conn.commit()
+    conn.close()
+    return '✅ Таблица сделок очищена.'
+
+@app.route('/clear_feedback')
+def clear_feedback():
+    conn = get_db_connection()
+    conn.execute('DELETE FROM feedback')
+    conn.commit()
+    conn.close()
+    return '✅ Таблица обратной связи очищена.'
 
 @app.route('/reset_db')
 def reset_db():
