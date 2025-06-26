@@ -59,7 +59,7 @@ def init_db():
 # ==================== EMAIL ====================
 def send_email(to_email, subject, message_body):
     sender = "mizarand@gmail.com"
-    app_password = os.environ.get("APP_EMAIL_PASSWORD", "MonitorA2")  # Лучше хранить пароль в переменных окружения!
+    app_password = "yiakaceuukylohfz" #app_password = os.environ.get("APP_EMAIL_PASSWORD", "MonitorA2")   Лучше хранить пароль в переменных окружения!
 
     msg = MIMEText(message_body, "plain", "utf-8")
     msg["Subject"] = subject
@@ -190,6 +190,14 @@ def logout():
     session.clear()
     flash("Вы вышли из системы.")
     return redirect('/login')
+    
+    @app.route('/reset_db')
+def reset_db():
+    import os
+    if os.path.exists('users.db'):
+        os.remove('users.db')
+    import init_db  # если у тебя есть файл init_db.py для создания базы
+    return '✅ База данных успешно очищена.'
 
 @app.route('/profile')
 def profile():
