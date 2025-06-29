@@ -136,19 +136,27 @@ def register():
 
 @app.route('/verify/<token>')
 def verify_email(token):
-    conn = get_db_connection()
-    user = conn.execute("SELECT * FROM users WHERE verification_token = ?", (token,)).fetchone()
-    if user:
-        if user["is_verified"]:
-            flash("Ваш email уже подтверждён.")
+    try:
+        conn = get_db_connection()
+        user = conn.execute("SELECT * FROM users WHERE verification_token = ?", (token,)).fetchone()
+
+        if user:
+            if user["is_verified"]:
+                flash("Ваш email уже подтверждён.")
+            else:
+                conn.execute("UPDATE users SET is_verified = 1, verification_token = NULL WHERE id = ?", (user['id'],))
+                conn.commit()
+                flash("✅ Email успешно подтверждён.")
         else:
-            conn.execute("UPDATE users SET is_verified = 1, verification_token = NULL WHERE id = ?", (user['id'],))
-            conn.commit()
-            flash("✅ Email успешно подтверждён.")
-    else:
-        flash("❌ Неверная или устаревшая ссылка.")
-    conn.close()
-    return redirect('/login')
+            flash("❌ Неверная или устаревшая ссылка.")
+
+        conn.close()
+        return redirect('/login')
+
+    except Exception as e:
+        print(f"❌ Ошибка подтверждения email: {e}")
+        return "❌ Internal Server Error — ошибка на сервере при подтверждении email."
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
