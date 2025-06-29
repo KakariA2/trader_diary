@@ -59,7 +59,7 @@ def init_db():
 # ==================== EMAIL ====================
 def send_email(to_email, subject, message_body):
     sender = "mizarand@gmail.com"
-    app_password = "yiakaceuukylohfz"  # Лучше хранить в .env
+    app_password = "yiakaceuukylohfz"  # Лучше использовать .env
 
     msg = MIMEText(message_body, "plain", "utf-8")
     msg["Subject"] = subject
@@ -126,8 +126,9 @@ def register():
         conn.commit()
         conn.close()
 
-        verify_link = f"http://localhost:5000/verify/{token}"
-        send_email(email, "Подтвердите регистрацию", f"Здравствуйте, {username}!\n\nПерейдите по ссылке для подтверждения: {verify_link}")
+        # ✅ Здесь заменили localhost на реальный домен
+        verify_link = f"https://trader-diary.onrender.com/verify/{token}"
+        send_email(email, "Подтвердите регистрацию", f"Здравствуйте, {username}!\n\nПерейдите по ссылке для подтверждения:\n{verify_link}")
 
         flash("✅ Регистрация прошла успешно. Проверьте почту для подтверждения.")
         return redirect('/login')
