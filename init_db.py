@@ -3,9 +3,9 @@ import sqlite3
 conn = sqlite3.connect('trades.db')
 cursor = conn.cursor()
 
-# Создаем новую таблицу с дополнительными полями
+# Таблица пользователей
 cursor.execute('''
-CREATE TABLE IF NOT EXISTS users_new (
+CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
@@ -18,19 +18,22 @@ CREATE TABLE IF NOT EXISTS users_new (
 )
 ''')
 
-# Копируем данные из старой таблицы в новую
+# Таблица сделок
 cursor.execute('''
-INSERT INTO users_new (id, username, email, password_hash, subscription_status, trial_start_date, premium_end_date, is_verified, verification_token)
-SELECT id, username, email, password_hash, subscription_status, trial_start_date, premium_end_date, 0, NULL FROM users
+CREATE TABLE IF NOT EXISTS trades (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    pair TEXT NOT NULL,
+    date TEXT NOT NULL,
+    type TEXT NOT NULL,
+    lot REAL NOT NULL,
+    profit REAL NOT NULL,
+    comment TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+)
 ''')
-
-# Удаляем старую таблицу
-cursor.execute('DROP TABLE users')
-
-# Переименовываем новую таблицу
-cursor.execute('ALTER TABLE users_new RENAME TO users')
 
 conn.commit()
 conn.close()
 
-print("Таблица users обновлена с новыми полями для подтверждения email.")
+print("Таблицы users и trades успешно созданы (если их не было)")

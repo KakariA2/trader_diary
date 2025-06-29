@@ -22,11 +22,11 @@
         <p id="datetime"></p>
         <script>
           function updateDateTime() {
-              const now = new Date();
-              const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
-              const date = now.toLocaleDateString('ru-RU', options);
-              const time = now.toLocaleTimeString('ru-RU');
-              document.getElementById("datetime").innerHTML = `Сегодня: ${date}<br>Текущее время: ${time}`;
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const date = now.toLocaleDateString('ru-RU', options);
+            const time = now.toLocaleTimeString('ru-RU');
+            document.getElementById("datetime").innerHTML = `Сегодня: ${date}<br>Текущее время: ${time}`;
           }
           setInterval(updateDateTime, 1000);
           updateDateTime();
@@ -34,64 +34,9 @@
       </td>
       <td style="text-align: right;">
         {% if session.get('username') %}
-          <p>
-            Привет, {{ session['username'] }}!
+          <p>Привет, {{ session['username'] }}!
             <a href="{{ url_for('logout') }}">🔒 Выйти</a>
           </p>
-		  {% if premium_end_date %}
-  <div id="countdown" style="font-weight: bold; margin-top: 15px; font-size: 18px; color: #555;"></div>
-  <script>
-    const premiumEnd = new Date("{{ premium_end_date }}");
-    function updateCountdown() {
-      const now = new Date();
-      const diff = premiumEnd - now;
-      if (diff <= 0) {
-        document.getElementById('countdown').textContent = "Подписка истекла.";
-        return;
-      }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-
-      document.getElementById('countdown').textContent = `Подписка активна, осталось: ${days} дн ${hours} ч ${minutes} мин ${seconds} с`;
-    }
-    setInterval(updateCountdown, 1000);
-    updateCountdown();
-  </script>
-{% endif %}
-
-
-          {% if premium_end_date %}
-          <p>
-            Подписка активна, закончится через: <span id="subscription-timer"></span>
-          </p>
-          <script>
-            // Обратный отсчёт времени до premium_end_date
-            const subscriptionEnd = new Date("{{ premium_end_date }}"); // передавай строку в формате ISO из Flask
-            function updateSubscriptionTimer() {
-              const now = new Date();
-              const diff = subscriptionEnd - now;
-
-              if (diff <= 0) {
-                document.getElementById('subscription-timer').innerHTML = 'Подписка истекла';
-                clearInterval(interval);
-                return;
-              }
-
-              const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-              const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-              const minutes = Math.floor((diff / (1000 * 60)) % 60);
-              const seconds = Math.floor((diff / 1000) % 60);
-
-              document.getElementById('subscription-timer').innerHTML =
-                `${days} дн. ${hours} ч. ${minutes} мин. ${seconds} сек.`;
-            }
-            updateSubscriptionTimer();
-            const interval = setInterval(updateSubscriptionTimer, 1000);
-          </script>
-          {% endif %}
-
         {% else %}
           <p>
             <a href="{{ url_for('login') }}">Вход</a> |
@@ -104,6 +49,30 @@
 
   <div class="container">
     <h1>Дневник трейдера</h1>
+
+    {% if premium_end_date %}
+      <div id="countdown" style="font-weight: bold; margin-top: 15px; font-size: 18px; color: #555;"></div>
+      <script>
+        const premiumEnd = new Date("{{ premium_end_date }}");
+        function updateCountdown() {
+          const now = new Date();
+          const diff = premiumEnd - now;
+          if (diff <= 0) {
+            document.getElementById('countdown').textContent = "Подписка истекла.";
+            return;
+          }
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+          const minutes = Math.floor((diff / (1000 * 60)) % 60);
+          const seconds = Math.floor((diff / 1000) % 60);
+
+          document.getElementById('countdown').textContent =
+            `Подписка активна, осталось: ${days} дн ${hours} ч ${minutes} мин ${seconds} с`;
+        }
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+      </script>
+    {% endif %}
 
     <div style="margin-top: 20px;">
       <h3>{{ texts['total_profit'] }}:
@@ -189,8 +158,8 @@
     <center>
       <div style="margin-bottom: 5px;">
         ☕ <strong>Поддержи проект:</strong>
-        <a href="https://buymeacoffee.com/kakari" target="_blank">BuyMeACoffee</a> |
-        <a href="https://yoomoney.ru/to/4100119196832465" target="_blank">ЮMoney</a>
+        <a href="https://buymeacoffee.com/kakari" target="_blank" rel="noopener noreferrer">BuyMeACoffee</a> |
+        <a href="https://yoomoney.ru/to/4100119196832465" target="_blank" rel="noopener noreferrer">ЮMoney</a>
       </div>
     </center>
 

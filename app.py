@@ -48,7 +48,7 @@ def index():
     ).fetchall()
     profit_by_pair = {row['pair']: row['SUM(profit)'] for row in profit_rows}
 
-    # Получаем список годов для фильтра (если нужен)
+    # Получаем список годов для фильтра
     years_rows = conn.execute(
         "SELECT DISTINCT strftime('%Y', date) AS year FROM trades WHERE user_id = ? ORDER BY year DESC",
         (session['user_id'],)
@@ -71,7 +71,7 @@ def index():
                            total_profit=total_profit,
                            profit_by_pair=profit_by_pair,
                            texts={
-                               'total_profit': 'Общая прибыль/убыток',
+                               'total_profit': 'Общая прибыль/Убыток',
                                'profit_by_pair': 'Прибыль по валютным парам'
                            },
                            years=years,
@@ -86,9 +86,12 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        email = request.form['email']
+        username = request.form['username'].strip()
+        email = request.form['email'].strip()
         password = request.form['password']
+
+        if not username or not email or not password:
+            return 'Заполните все поля'
 
         hashed_password = generate_password_hash(password)
 
@@ -116,7 +119,7 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
+        email = request.form['email'].strip()
         password = request.form['password']
 
         conn = get_db_connection()
@@ -149,12 +152,22 @@ def add_trade():
     if 'user_id' not in session:
         return redirect('/login')
 
-    pair = request.form['pair']
+    pair = request.form['pair'].strip()
     date = request.form['date']
     type_ = request.form['type']
     lot = request.form['lot']
     profit = request.form['profit']
-    comment = request.form['comment']
+    comment = request.form.get('comment', '').strip()
+
+    # Валидация данных (можно расширить)
+    if not pair or not date or not type_ or not lot or not profit:
+        return 'Заполните все обязательные поля сделки'
+
+    try:
+        lot = float(lot)
+        profit = float(profit)
+    except ValueError:
+        return 'Лот и прибыль должны быть числами'
 
     conn = get_db_connection()
     conn.execute(
