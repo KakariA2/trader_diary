@@ -60,7 +60,7 @@ def init_db():
 # ==================== EMAIL ====================
 def send_email(to_email, subject, message_body):
     sender = "mizarand@gmail.com"
-    app_password = "yiakaceuukylohfz"  # Лучше хранить в .env
+    app_password = "yiakaceuukylohfz"  # Лучше использовать .env
 
     msg = MIMEText(message_body, "plain", "utf-8")
     msg["Subject"] = subject
@@ -95,41 +95,21 @@ def index():
     trades = conn.execute('SELECT * FROM trades ORDER BY date DESC').fetchall()
     conn.close()
 
-    # Общая прибыль
     total_profit = sum(t['profit'] for t in trades)
 
-    # Прибыль по парам
+    # Формируем словарь с прибылью по валютным парам
     profit_by_pair = {}
-    for t in trades:
-        profit_by_pair[t['pair']] = profit_by_pair.get(t['pair'], 0) + t['profit']
+    for trade in trades:
+        pair = trade['pair']
+        profit_by_pair[pair] = profit_by_pair.get(pair, 0) + trade['profit']
 
-    # Список годов из сделок или текущий год
-    years = sorted({int(t['date'][:4]) for t in trades}, reverse=True) if trades else [datetime.datetime.now().year]
-
-    # Список месяцев с названиями
-    months = [(1, 'Январь'), (2, 'Февраль'), (3, 'Март'), (4, 'Апрель'),
-              (5, 'Май'), (6, 'Июнь'), (7, 'Июль'), (8, 'Август'),
-              (9, 'Сентябрь'), (10, 'Октябрь'), (11, 'Ноябрь'), (12, 'Декабрь')]
-
-    # Получаем выбранные год и месяц из GET параметров, если нет — текущие
-    selected_year = int(request.args.get('year', years[0]))
-    selected_month = int(request.args.get('month', datetime.datetime.now().month))
-
+    # Тексты для шаблона
     texts = {
         'total_profit': 'Общая прибыль/убыток',
-        'profit_by_pair': 'Прибыль по валютным парам',
+        'profit_by_pair': 'Прибыль по валютным парам'
     }
 
-    return render_template('index.html',
-                           trades=trades,
-                           total_profit=total_profit,
-                           profit_by_pair=profit_by_pair,
-                           years=years,
-                           months=months,
-                           selected_year=selected_year,
-                           selected_month=selected_month,
-                           texts=texts)
-
+    return render_template('index.html', trades=trades, total_profit=total_profit, profit_by_pair=profit_by_pair, texts=texts)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -167,7 +147,6 @@ def register():
         return redirect('/login')
     return render_template('register.html')
 
-
 @app.route('/verify/<token>')
 def verify_email(token):
     try:
@@ -190,7 +169,6 @@ def verify_email(token):
     except Exception as e:
         print(f"❌ Ошибка подтверждения email: {e}")
         return "❌ Internal Server Error — ошибка на сервере при подтверждении email."
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -216,13 +194,11 @@ def login():
             flash("Неверный email или пароль.")
     return render_template('login.html')
 
-
 @app.route('/logout')
 def logout():
     session.clear()
     flash("Вы вышли из системы.")
     return redirect('/login')
-
 
 @app.route('/profile')
 def profile():
@@ -233,7 +209,6 @@ def profile():
     user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
     conn.close()
     return render_template('profile.html', user=user)
-
 
 # =============== ЗАПУСК ===============
 if __name__ == '__main__':
