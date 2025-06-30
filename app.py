@@ -3,9 +3,23 @@ import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import os
+from flask_mail import Mail, Message
+import secrets
+import logging
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Замените на свой секретный ключ
+
+# Настройки почты (замени на свои реальные)
+app.config.update(
+    MAIL_SERVER='smtp.gmail.com',
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_USERNAME='твой_email@gmail.com',
+    MAIL_PASSWORD='твой_пароль_приложения',
+    MAIL_DEFAULT_SENDER='твой_email@gmail.com'
+)
+mail = Mail(app)
 
 # Абсолютный путь к файлу базы данных рядом с app.py
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -18,7 +32,6 @@ def get_db_connection():
     return conn
 
 
-# Создаём таблицы, если их нет (инициализация базы)
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -55,7 +68,6 @@ def init_db():
     conn.close()
 
 
-# Главная страница с отображением сделок и информации о подписке
 @app.route('/')
 def index():
     if 'user_id' not in session:
@@ -79,10 +91,10 @@ def index():
     ).fetchone()[0] or 0
 
     profit_rows = conn.execute(
-        'SELECT pair, SUM(profit) FROM trades WHERE user_id = ? GROUP BY pair',
+        'SELECT pair, SUM(profit) as total_profit FROM trades WHERE user_id = ? GROUP BY pair',
         (session['user_id'],)
     ).fetchall()
-    profit_by_pair = {row['pair']: row['SUM(profit)'] for row in profit_rows}
+    profit_by_pair = {row['pair']: row['total_profit'] for row in profit_rows}
 
     years_rows = conn.execute(
         "SELECT DISTINCT strftime('%Y', date) AS year FROM trades WHERE user_id = ? ORDER BY year DESC",
@@ -117,7 +129,6 @@ def index():
                            )
 
 
-# Регистрация пользователя с установкой даты окончания подписки (7 дней)
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -150,7 +161,6 @@ def register():
     return render_template('register.html')
 
 
-# Вход пользователя
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -174,14 +184,12 @@ def login():
     return render_template('login.html')
 
 
-# Выход из системы
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/login')
 
 
-# Добавление новой сделки
 @app.route('/add_trade', methods=['POST'])
 def add_trade():
     if 'user_id' not in session:
@@ -215,5 +223,6 @@ def add_trade():
 
 
 if __name__ == '__main__':
-    init_db()  # Создаем таблицы при старте, если их нет
+    logging.basicConfig(level=logging.DEBUG)
+    init_db()
     app.run(host='0.0.0.0', port=5000, debug=True)
