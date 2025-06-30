@@ -2,17 +2,57 @@ from flask import Flask, render_template, request, redirect, session, url_for
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Замените на свой секретный ключ
 
-DATABASE = 'trades.db'
+# Абсолютный путь к файлу базы данных рядом с app.py
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DATABASE = os.path.join(BASE_DIR, 'trades.db')
 
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row  # Чтобы обращаться к колонкам по имени
     return conn
+
+
+# Создаём таблицы, если их нет (инициализация базы)
+def init_db():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        subscription_status TEXT NOT NULL DEFAULT 'free',
+        trial_start_date TEXT,
+        premium_end_date TEXT,
+        is_verified INTEGER NOT NULL DEFAULT 0,
+        verification_token TEXT
+    )
+    ''')
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS trades (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        pair TEXT NOT NULL,
+        date TEXT NOT NULL,
+        type TEXT NOT NULL,
+        lot REAL NOT NULL,
+        profit REAL NOT NULL,
+        comment TEXT,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    ''')
+
+    conn.commit()
+    conn.close()
 
 
 # Главная страница с отображением сделок и информации о подписке
@@ -23,32 +63,27 @@ def index():
 
     conn = get_db_connection()
 
-    # Получаем данные пользователя (чтобы взять дату окончания подписки)
     user = conn.execute(
         'SELECT * FROM users WHERE id = ?',
         (session['user_id'],)
     ).fetchone()
 
-    # Получаем сделки пользователя
     trades = conn.execute(
         'SELECT * FROM trades WHERE user_id = ? ORDER BY date DESC',
         (session['user_id'],)
     ).fetchall()
 
-    # Подсчёт общей прибыли
     total_profit = conn.execute(
         'SELECT SUM(profit) FROM trades WHERE user_id = ?',
         (session['user_id'],)
     ).fetchone()[0] or 0
 
-    # Прибыль по каждой валютной паре
     profit_rows = conn.execute(
         'SELECT pair, SUM(profit) FROM trades WHERE user_id = ? GROUP BY pair',
         (session['user_id'],)
     ).fetchall()
     profit_by_pair = {row['pair']: row['SUM(profit)'] for row in profit_rows}
 
-    # Получаем список годов для фильтра
     years_rows = conn.execute(
         "SELECT DISTINCT strftime('%Y', date) AS year FROM trades WHERE user_id = ? ORDER BY year DESC",
         (session['user_id'],)
@@ -96,7 +131,7 @@ def register():
         hashed_password = generate_password_hash(password)
 
         now = datetime.utcnow()
-        premium_end = now + timedelta(days=7)  # 7 дней подписки
+        premium_end = now + timedelta(days=7)
         premium_end_str = premium_end.isoformat()
 
         conn = get_db_connection()
@@ -159,7 +194,6 @@ def add_trade():
     profit = request.form['profit']
     comment = request.form.get('comment', '').strip()
 
-    # Валидация данных (можно расширить)
     if not pair or not date or not type_ or not lot or not profit:
         return 'Заполните все обязательные поля сделки'
 
@@ -181,4 +215,5 @@ def add_trade():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    init_db()  # Создаем таблицы при старте, если их нет
+    app.run(host='0.0.0.0', port=5000, debug=True)
