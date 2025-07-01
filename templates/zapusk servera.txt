@@ -38,7 +38,7 @@ bash
 Копировать
 Редактировать
 git add app.py
-git commit -m "Приведение валютной пары к верхнему регистру"
+git commit -m "Перевожу файл на сервер app.py"
 git push origin main
 (Если у тебя ветка не main, а master, замени main на master.)
 

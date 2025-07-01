@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Повторная отправка письма</title>
+</head>
+<body>
+    <h2>Повторная отправка письма с подтверждением</h2>
+    <form method="post">
+        <label>Введите ваш email:</label><br>
+        <input type="email" name="email" required>
+        <br><br>
+        <input type="submit" value="Отправить">
+    </form>
+    <p><a href="{{ url_for('login') }}">← Вернуться к входу</a></p>
+</body>
+</html>

@@ -3,14 +3,14 @@ import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import os
-from flask_mail import Mail, Message
+from flask_mail import Mail, Message  # можно оставить, если позже захочешь вернуть почту
 import secrets
 import logging
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')  # лучше задать SECRET_KEY в переменных окружения
 
-# Настройки почты из переменных окружения
+# Настройки почты (если захочешь вернуть отправку писем)
 app.config.update(
     MAIL_SERVER=os.getenv('MAIL_SERVER', 'smtp.gmail.com'),
     MAIL_PORT=int(os.getenv('MAIL_PORT', 587)),
@@ -42,7 +42,7 @@ def init_db():
         subscription_status TEXT NOT NULL DEFAULT 'free',
         trial_start_date TEXT,
         premium_end_date TEXT,
-        is_verified INTEGER NOT NULL DEFAULT 0,
+        is_verified INTEGER NOT NULL DEFAULT 1,  -- сразу подтверждён
         verification_token TEXT
     )
     ''')
@@ -69,6 +69,15 @@ def index():
     if 'user_id' not in session:
         return redirect('/login')
 
+    # Получаем выбранные год и месяц из параметров URL, если есть, иначе текущие
+    selected_year = request.args.get('year', type=int)
+    selected_month = request.args.get('month', type=int)
+
+    if not selected_year:
+        selected_year = datetime.now().year
+    if not selected_month:
+        selected_month = datetime.now().month
+
     conn = get_db_connection()
 
     user = conn.execute(
@@ -76,19 +85,21 @@ def index():
         (session['user_id'],)
     ).fetchone()
 
+    date_prefix = f"{selected_year:04d}-{selected_month:02d}"
+
     trades = conn.execute(
-        'SELECT * FROM trades WHERE user_id = ? ORDER BY date DESC',
-        (session['user_id'],)
+        'SELECT * FROM trades WHERE user_id = ? AND date LIKE ? ORDER BY date DESC',
+        (session['user_id'], f'{date_prefix}%')
     ).fetchall()
 
     total_profit = conn.execute(
-        'SELECT SUM(profit) FROM trades WHERE user_id = ?',
-        (session['user_id'],)
+        'SELECT SUM(profit) FROM trades WHERE user_id = ? AND date LIKE ?',
+        (session['user_id'], f'{date_prefix}%')
     ).fetchone()[0] or 0
 
     profit_rows = conn.execute(
-        'SELECT pair, SUM(profit) as total_profit FROM trades WHERE user_id = ? GROUP BY pair',
-        (session['user_id'],)
+        'SELECT pair, SUM(profit) as total_profit FROM trades WHERE user_id = ? AND date LIKE ? GROUP BY pair',
+        (session['user_id'], f'{date_prefix}%')
     ).fetchall()
     profit_by_pair = {row['pair']: row['total_profit'] for row in profit_rows}
 
@@ -103,9 +114,6 @@ def index():
         (5, 'Май'), (6, 'Июнь'), (7, 'Июль'), (8, 'Август'),
         (9, 'Сентябрь'), (10, 'Октябрь'), (11, 'Ноябрь'), (12, 'Декабрь')
     ]
-
-    selected_year = years[0] if years else datetime.now().year
-    selected_month = datetime.now().month
 
     conn.close()
 
@@ -140,13 +148,11 @@ def register():
         premium_end = now + timedelta(days=7)
         premium_end_str = premium_end.isoformat()
 
-        verification_token = secrets.token_urlsafe(16)
-
         conn = get_db_connection()
         try:
             conn.execute(
-                'INSERT INTO users (username, email, password_hash, premium_end_date, verification_token) VALUES (?, ?, ?, ?, ?)',
-                (username, email, hashed_password, premium_end_str, verification_token)
+                'INSERT INTO users (username, email, password_hash, premium_end_date, is_verified) VALUES (?, ?, ?, ?, ?)',
+                (username, email, hashed_password, premium_end_str, 1)  # is_verified=1 — сразу подтверждён
             )
             conn.commit()
         except sqlite3.IntegrityError:
@@ -154,41 +160,8 @@ def register():
             return 'Пользователь с таким именем или почтой уже существует'
         conn.close()
 
-        confirm_url = url_for('verify_email', token=verification_token, _external=True)
-        subject = "Подтверждение регистрации"
-        body = f"Здравствуйте, {username}!\n\nДля подтверждения регистрации перейдите по ссылке:\n{confirm_url}\n\nЕсли это не вы, просто проигнорируйте это письмо."
-
-        try:
-            msg = Message(subject=subject, recipients=[email], body=body)
-            mail.send(msg)
-        except Exception as e:
-            # Можно логировать ошибку
-            app.logger.error(f"Ошибка отправки письма: {e}")
-            return 'Регистрация прошла, но письмо с подтверждением не отправлено. Обратитесь к администратору.'
-
-        return 'Регистрация прошла успешно! Проверьте почту для подтверждения.'
+        return redirect('/login')
     return render_template('register.html')
-
-@app.route('/verify/<token>')
-def verify_email(token):
-    conn = get_db_connection()
-    user = conn.execute(
-        'SELECT * FROM users WHERE verification_token = ?',
-        (token,)
-    ).fetchone()
-
-    if user is None:
-        conn.close()
-        return 'Неверный или устаревший токен подтверждения.'
-
-    conn.execute(
-        'UPDATE users SET is_verified = 1, verification_token = NULL WHERE id = ?',
-        (user['id'],)
-    )
-    conn.commit()
-    conn.close()
-
-    return 'Email успешно подтверждён! Теперь вы можете войти в систему.'
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -204,8 +177,6 @@ def login():
         conn.close()
 
         if user and check_password_hash(user['password_hash'], password):
-            if user['is_verified'] == 0:
-                return 'Пожалуйста, подтвердите вашу почту перед входом.'
             session['user_id'] = user['id']
             session['username'] = user['username']
             return redirect('/')
