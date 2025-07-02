@@ -13,9 +13,9 @@
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      text-align: center;
     }
     .form-container h2 {
-      text-align: center;
       margin-bottom: 20px;
     }
     .form-container input[type="email"],
@@ -41,7 +41,6 @@
       background-color: #45a049;
     }
     .form-container p {
-      text-align: center;
       margin-top: 10px;
     }
     .form-container a {
@@ -50,6 +49,24 @@
     }
     .form-container a:hover {
       text-decoration: underline;
+    }
+
+    /* Стили для кнопки Google */
+    .btn-google {
+      display: inline-block;
+      background-color: #4285F4;
+      color: white;
+      padding: 12px;
+      margin-top: 15px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      width: 100%;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .btn-google:hover {
+      background-color: #357ae8;
     }
   </style>
 </head>
@@ -70,6 +87,9 @@
       <input type="password" name="password" placeholder="Пароль" required />
       <button type="submit">Войти</button>
     </form>
+
+    <a href="{{ url_for('google.login') }}" class="btn-google">Войти через Google</a>
+
     <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
   </div>
 </body>

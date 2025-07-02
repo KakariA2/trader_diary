@@ -7,8 +7,11 @@ from flask_mail import Mail, Message  # можно оставить, если п
 import secrets
 import logging
 
+# Для Google OAuth
+from flask_dance.contrib.google import make_google_blueprint, google
+
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')  # лучше задать SECRET_KEY в переменных окружения
+app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')  # лучше задать в env
 
 # Настройки почты (если захочешь вернуть отправку писем)
 app.config.update(
@@ -63,6 +66,52 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+# Google OAuth blueprint — вставь свои реальные CLIENT_SECRET и CLIENT_ID
+GOOGLE_CLIENT_ID = '96839255887-9gqrdcd2h9tae94b0ngi6kbs5q4iucv7.apps.googleusercontent.com'
+GOOGLE_CLIENT_SECRET = '****Y9d1'
+
+google_bp = make_google_blueprint(
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    scope=["profile", "email"],
+    redirect_url="/google_login/callback"
+)
+app.register_blueprint(google_bp, url_prefix="/login")
+
+@app.route("/google_login/callback")
+def google_login_callback():
+    if not google.authorized:
+        return redirect(url_for("google.login"))
+
+    resp = google.get("/oauth2/v2/userinfo")
+    if not resp.ok:
+        return "Ошибка при получении информации с Google", 500
+
+    user_info = resp.json()
+    email = user_info["email"]
+    username = user_info.get("name", email.split("@")[0])
+
+    conn = get_db_connection()
+    user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+    if user is None:
+        hashed_password = generate_password_hash(secrets.token_urlsafe(16))  # случайный пароль
+        now = datetime.utcnow()
+        premium_end = now + timedelta(days=7)
+        premium_end_str = premium_end.isoformat()
+        conn.execute(
+            "INSERT INTO users (username, email, password_hash, premium_end_date, is_verified) VALUES (?, ?, ?, ?, ?)",
+            (username, email, hashed_password, premium_end_str, 1)
+        )
+        conn.commit()
+        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    conn.close()
+
+    session['user_id'] = user['id']
+    session['username'] = user['username']
+
+    return redirect("/")
 
 @app.route('/')
 def index():
