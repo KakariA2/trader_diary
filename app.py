@@ -3,7 +3,7 @@ import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import os
-from flask_mail import Mail, Message  # можно оставить, если позже захочешь вернуть почту
+#from flask_mail import Mail, Message  # можно оставить, если позже захочешь вернуть почту
 import secrets
 import logging
 
@@ -22,7 +22,7 @@ app.config.update(
     MAIL_PASSWORD=os.getenv('MAIL_PASSWORD'),
     MAIL_DEFAULT_SENDER=os.getenv('MAIL_DEFAULT_SENDER')
 )
-mail = Mail(app)
+#mail = Mail(app)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.path.join(BASE_DIR, 'trades.db')
