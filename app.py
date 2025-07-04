@@ -8,25 +8,28 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import secrets
 import logging
+from flask_dance.contrib.google import make_google_blueprint, google
 
+# Создаем Flask приложение
+app = Flask(__name__)
+app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')
+
+# Печать для проверки, что переменные окружения подгрузились
 print("SECRET_KEY =", os.getenv('SECRET_KEY'))
 print("GOOGLE_CLIENT_ID =", os.getenv('GOOGLE_CLIENT_ID'))
 print("GOOGLE_CLIENT_SECRET =", os.getenv('GOOGLE_CLIENT_SECRET'))
 
-# Для Google OAuth
-from flask_dance.contrib.google import make_google_blueprint, google
-
-app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')  # Лучше всегда задавать в .env
-
+# Путь к базе данных SQLite
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.path.join(BASE_DIR, 'trades.db')
 
+# Функция подключения к базе данных
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
+# Функция инициализации базы данных (создание таблиц, если их нет)
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -62,6 +65,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Конфигурация Google OAuth через Flask-Dance
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 
@@ -73,6 +77,41 @@ google_bp = make_google_blueprint(
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
+# Главная страница
+@app.route('/')
+def index():
+    # Для примера передаем фиктивные данные — замени на реальные из БД
+    return render_template(
+        'index.html',
+        session=session,
+        premium_end_date=None,  # или из базы, например, session.get('premium_end_date')
+        texts={
+            'total_profit': 'Общая прибыль/убыток',
+            'profit_by_pair': 'Прибыль по валютным парам'
+        },
+        total_profit=123.45,
+        profit_by_pair={
+            'EUR/USD': 50.00,
+            'GBP/USD': -20.00,
+        },
+        years=[2024, 2025],
+        months=[(1, 'Январь'), (2, 'Февраль'), (3, 'Март')],
+        selected_year=2025,
+        selected_month=7,
+        trades=[
+            {
+                'pair': 'EUR/USD',
+                'date': '2025-07-04 12:00',
+                'type': 'Buy',
+                'lot': 0.1,
+                'profit': 10.0,
+                'comment': 'Удачная сделка'
+            },
+            # Можно добавить другие сделки из базы
+        ]
+    )
+
+# Обработка callback после входа через Google
 @app.route("/google_login/callback")
 def google_login_callback():
     if not google.authorized:
@@ -107,7 +146,13 @@ def google_login_callback():
 
     return redirect("/")
 
-# --- остальные маршруты и функции ---
+# Маршрут для выхода из сессии
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
+# Можно добавить другие маршруты, например, регистрацию, добавление сделок и т.д.
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
