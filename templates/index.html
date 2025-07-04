@@ -39,8 +39,9 @@
           </p>
         {% else %}
           <p>
-            <a href="{{ url_for('login') }}">Вход</a> |
-            <a href="{{ url_for('register') }}">Регистрация</a>
+            <a href="{{ url_for('google.login') }}">Вход</a>
+            {# Если у тебя есть маршрут регистрации, можно раскомментировать #}
+            {# | <a href="{{ url_for('register') }}">Регистрация</a> #}
           </p>
         {% endif %}
       </td>
