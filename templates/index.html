@@ -34,13 +34,14 @@
       </td>
       <td style="text-align: right;">
   {% if session.get('username') %}
-    <p>Привет, {{ session['username'] }}!
-       <a href="{{ url_for('logout') }}">🔒 Выйти</a>
+    <p>
+      Привет, {{ session['username'] }}!
+      <a href="{{ url_for('logout') }}">🔒 Выйти</a>
     </p>
   {% else %}
     <p>
-       <a href="{{ url_for('google.login') }}">Войти через Google</a>
-       {# регистрация пока не используем #}
+      <a href="{{ url_for('google.login') }}">Войти через Google</a>
+      <!-- регистрация добавим позже -->
     </p>
   {% endif %}
 </td>
