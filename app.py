@@ -1,159 +1,152 @@
 from dotenv import load_dotenv
-load_dotenv()  # Загружаем переменные окружения из .env
+load_dotenv()
 
-import os
-from flask import Flask, render_template, request, redirect, session, url_for
-import sqlite3
-from werkzeug.security import generate_password_hash, check_password_hash
+import os, sqlite3, logging, secrets
 from datetime import datetime, timedelta
-import secrets
-import logging
+
+from flask import (
+    Flask, render_template, request, redirect, session, url_for
+)
+from werkzeug.security import generate_password_hash
 from flask_dance.contrib.google import make_google_blueprint, google
 
-# Создаем Flask приложение
+# ──────────────────── Flask app ────────────────────
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')
 
-# Печать для проверки, что переменные окружения подгрузились
+# Проверяем, что .env подхватился
 print("SECRET_KEY =", os.getenv('SECRET_KEY'))
 print("GOOGLE_CLIENT_ID =", os.getenv('GOOGLE_CLIENT_ID'))
 print("GOOGLE_CLIENT_SECRET =", os.getenv('GOOGLE_CLIENT_SECRET'))
 
-# Путь к базе данных SQLite
+# ──────────────────── База данных ───────────────────
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.path.join(BASE_DIR, 'trades.db')
 
-# Функция подключения к базе данных
+
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
-# Функция инициализации базы данных (создание таблиц, если их нет)
+
 def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    """Создаём таблицы, если их нет."""
+    with get_db_connection() as conn:
+        cur = conn.cursor()
+        cur.execute('''CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            email TEXT UNIQUE,
+            password_hash TEXT,
+            subscription_status TEXT DEFAULT 'free',
+            trial_start_date TEXT,
+            premium_end_date TEXT,
+            is_verified INTEGER DEFAULT 1,
+            verification_token TEXT
+        )''')
 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
-        email TEXT NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        subscription_status TEXT NOT NULL DEFAULT 'free',
-        trial_start_date TEXT,
-        premium_end_date TEXT,
-        is_verified INTEGER NOT NULL DEFAULT 1,
-        verification_token TEXT
-    )
-    ''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            pair TEXT NOT NULL,
+            date TEXT NOT NULL,
+            type TEXT NOT NULL,
+            lot REAL NOT NULL,
+            profit REAL NOT NULL,
+            comment TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )''')
+        conn.commit()
 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS trades (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        pair TEXT NOT NULL,
-        date TEXT NOT NULL,
-        type TEXT NOT NULL,
-        lot REAL NOT NULL,
-        profit REAL NOT NULL,
-        comment TEXT,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-    )
-    ''')
-
-    conn.commit()
-    conn.close()
-
-# Конфигурация Google OAuth через Flask-Dance
-GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
-GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
-
+# ───────────────── Google OAuth (Flask‑Dance) ─────────────────
 google_bp = make_google_blueprint(
-    client_id=GOOGLE_CLIENT_ID,
-    client_secret=GOOGLE_CLIENT_SECRET,
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
     scope=["profile", "email"],
     redirect_url="/google_login/callback"
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
-# Главная страница
+# ──────────────────── Маршруты ────────────────────
 @app.route('/')
 def index():
-    # Для примера передаем фиктивные данные — замени на реальные из БД
+    # ▸ выбрать год/месяц (по умолчанию — текущие)
+    now = datetime.now()
+    current_year = now.year
+    selected_year = int(request.args.get('year', current_year))
+    selected_month = int(request.args.get('month', now.month))
+
+    years = list(range(2020, current_year + 6))               # 2020…+5 лет
+    months = [(i, name) for i, name in enumerate(
+        ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+         'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], 1)]
+
+    # ▸ здесь вместо демо‑данных выбери реальные сделки из БД
+    demo_trades = [{
+        'pair': 'EUR/USD', 'date': '2025‑07‑04 12:00',
+        'type': 'Buy', 'lot': 0.1, 'profit': 10.0,
+        'comment': 'Удачная сделка'
+    }]
+
     return render_template(
         'index.html',
         session=session,
-        premium_end_date=None,  # или из базы, например, session.get('premium_end_date')
+        premium_end_date=None,      # если нужна дата конца подписки
         texts={
             'total_profit': 'Общая прибыль/убыток',
             'profit_by_pair': 'Прибыль по валютным парам'
         },
-        total_profit=123.45,
-        profit_by_pair={
-            'EUR/USD': 50.00,
-            'GBP/USD': -20.00,
-        },
-        years=[2024, 2025],
-        months=[(1, 'Январь'), (2, 'Февраль'), (3, 'Март')],
-        selected_year=2025,
-        selected_month=7,
-        trades=[
-            {
-                'pair': 'EUR/USD',
-                'date': '2025-07-04 12:00',
-                'type': 'Buy',
-                'lot': 0.1,
-                'profit': 10.0,
-                'comment': 'Удачная сделка'
-            },
-            # Можно добавить другие сделки из базы
-        ]
+        total_profit=123.45,        # рассчитанное значение
+        profit_by_pair={'EUR/USD': 50, 'GBP/USD': -20},
+        years=years, months=months,
+        selected_year=selected_year,
+        selected_month=selected_month,
+        trades=demo_trades
     )
 
-# Обработка callback после входа через Google
-@app.route("/google_login/callback")
+@app.route('/google_login/callback')
 def google_login_callback():
     if not google.authorized:
         return redirect(url_for("google.login"))
 
     resp = google.get("/oauth2/v2/userinfo")
     if not resp.ok:
-        return "Ошибка при получении информации с Google", 500
+        return "Ошибка Google OAuth", 500
 
-    user_info = resp.json()
-    email = user_info["email"]
-    username = user_info.get("name", email.split("@")[0])
+    info = resp.json()
+    email = info["email"]
+    username = info.get("name", email.split("@")[0])
 
-    conn = get_db_connection()
-    user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    with get_db_connection() as conn:
+        user = conn.execute(
+            "SELECT * FROM users WHERE email = ?", (email,)
+        ).fetchone()
 
-    if user is None:
-        hashed_password = generate_password_hash(secrets.token_urlsafe(16))  # случайный пароль
-        now = datetime.utcnow()
-        premium_end = now + timedelta(days=7)
-        premium_end_str = premium_end.isoformat()
-        conn.execute(
-            "INSERT INTO users (username, email, password_hash, premium_end_date, is_verified) VALUES (?, ?, ?, ?, ?)",
-            (username, email, hashed_password, premium_end_str, 1)
-        )
-        conn.commit()
-        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-    conn.close()
+        if user is None:
+            pw_hash = generate_password_hash(secrets.token_urlsafe(16))
+            premium_end = (datetime.utcnow() + timedelta(days=7)).isoformat()
+            conn.execute(
+                "INSERT INTO users (username, email, password_hash, premium_end_date) "
+                "VALUES (?, ?, ?, ?)",
+                (username, email, pw_hash, premium_end)
+            )
+            conn.commit()
+            user = conn.execute(
+                "SELECT * FROM users WHERE email = ?", (email,)
+            ).fetchone()
 
     session['user_id'] = user['id']
     session['username'] = user['username']
+    return redirect('/')
 
-    return redirect("/")
-
-# Маршрут для выхода из сессии
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/')
 
-# Можно добавить другие маршруты, например, регистрацию, добавление сделок и т.д.
 
+# ──────────────────── Запуск ────────────────────
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     init_db()
