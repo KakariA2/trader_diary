@@ -33,19 +33,17 @@
         </script>
       </td>
       <td style="text-align: right;">
-        {% if session.get('username') %}
-  <a href="{{ url_for('logout') }}">🔒 Выйти</a>
-{% else %}
-  <a href="{{ url_for('google.login') }}">Вход через Google</a>
-{% endif %}
-
-          <p>
-            <a href="{{ url_for('google.login') }}">Вход через Google</a> |
-            {# Если у тебя есть маршрут регистрации, можно раскомментировать #}
-            {# | <a href="{{ url_for('register') }}">Регистрация</a> #}
-          </p>
-        {% endif %}
-      </td>
+  {% if session.get('username') %}
+    <p>Привет, {{ session['username'] }}!
+       <a href="{{ url_for('logout') }}">🔒 Выйти</a>
+    </p>
+  {% else %}
+    <p>
+       <a href="{{ url_for('google.login') }}">Войти через Google</a>
+       {# регистрация пока не используем #}
+    </p>
+  {% endif %}
+</td>
     </tr>
   </table>
 
