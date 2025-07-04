@@ -33,18 +33,17 @@
         </script>
       </td>
       <td style="text-align: right;">
-  {% if session.get('username') %}
-    <p>
-      Привет, {{ session['username'] }}!
-      <a href="{{ url_for('logout') }}">🔒 Выйти</a>
-    </p>
-  {% else %}
-    <p>
-      <a href="{{ url_for('google.login') }}">Войти через Google</a>
-    </p>
-  {% endif %}
-</td>
-
+        {% if session.get('username') %}
+          <p>
+            Привет, {{ session['username'] }}!
+            <a href="{{ url_for('logout') }}">🔒 Выйти</a>
+          </p>
+        {% else %}
+          <p>
+            <a href="{{ url_for('google.login') }}">Войти через Google</a>
+          </p>
+        {% endif %}
+      </td>
     </tr>
   </table>
 
@@ -164,8 +163,8 @@
       </div>
     </center>
 
-   <div style="margin-top: 8px; text-align: center;">
-       <a href="/feedback" style="margin-right: 10px;">📩 Написать сообщение</a> 
+    <div style="margin-top: 8px; text-align: center;">
+      <a href="/feedback" style="margin-right: 10px;">📩 Написать сообщение</a> 
       <button id="shareBtn" style="
         padding: 8px 14px;
         font-size: 14px;
