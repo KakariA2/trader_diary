@@ -1,8 +1,10 @@
-
 from dotenv import load_dotenv
 load_dotenv()
 
-import os, sqlite3, logging, secrets
+import os
+import sqlite3
+import logging
+import secrets
 from datetime import datetime, timedelta
 
 from flask import (
@@ -11,63 +13,31 @@ from flask import (
 from werkzeug.security import generate_password_hash
 from flask_dance.contrib.google import make_google_blueprint, google
 
-from flask import Flask, redirect, url_for
-from flask_dance.contrib.google import make_google_blueprint, google
-import os
-
-
 app = Flask(__name__)
-app.secret_key = "supersekret_key"  # можешь придумать свою строку
+app.secret_key = os.getenv('supersecretkey_1234567890abcdef', 'supersecretkey_0987654321')  # Секретный ключ из .env или запасной
 
 # Разрешаем работу без HTTPS для локальной отладки
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-# Заменишь client_id и client_secret своими
+# Настройка Google OAuth blueprint
 google_bp = make_google_blueprint(
-    client_id="96839255887-9gqrdcd2h9tae94b0ngi6kbs5q4iucv7.apps.googleusercontent.com",
-    client_secret="****Y9d1",
-    redirect_to="profile"
+    client_id=os.getenv('96839255887-9gqrdcd2h9tae94b0ngi6kbs5q4iucv7.apps.googleusercontent.com'),
+    client_secret=os.getenv('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'),
+    scope=["profile", "mizarand@gmail.com"],
+    redirect_url="/google/login/authorized"  # Этот URL - маршрут, куда Google вернет ответ
 )
-app.register_blueprint(google_bp, url_prefix="/login")
+app.register_blueprint(google_bp, url_prefix="/google_login")
 
-@app.route("/")
-def index():
-    return "<h2>Добро пожаловать!</h2><a href='/login/google'>Войти через Google</a>"
-
-# Профиль, куда перенаправит Google после успешного входа
-@app.route("/profile")
-def profile():
-    if not google.authorized:
-        return redirect(url_for("google.login"))
-
-    resp = google.get("/oauth2/v2/userinfo")
-    if resp.ok:
-        user_info = resp.json()
-        return f"<h3>Привет, {user_info['email']}!</h3>"
-    return "<h3>Не удалось получить информацию о пользователе.</h3>"
-    
-# ──────────────────── Flask app ────────────────────
-app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')
-
-# Проверяем, что .env подхватился
-print("SECRET_KEY =", os.getenv('SECRET_KEY'))
-print("GOOGLE_CLIENT_ID =", os.getenv('GOOGLE_CLIENT_ID'))
-print("GOOGLE_CLIENT_SECRET =", os.getenv('GOOGLE_CLIENT_SECRET'))
-
-# ──────────────────── База данных ───────────────────
+# Путь к базе
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.path.join(BASE_DIR, 'trades.db')
-
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
-
 def init_db():
-    """Создаём таблицы, если их нет."""
     with get_db_connection() as conn:
         cur = conn.cursor()
         cur.execute('''CREATE TABLE IF NOT EXISTS users (
@@ -81,7 +51,6 @@ def init_db():
             is_verified INTEGER DEFAULT 1,
             verification_token TEXT
         )''')
-
         cur.execute('''CREATE TABLE IF NOT EXISTS trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -95,32 +64,20 @@ def init_db():
         )''')
         conn.commit()
 
-# ───────────────── Google OAuth (Flask‑Dance) ─────────────────
-google_bp = make_google_blueprint(
-    client_id=os.getenv('GOOGLE_CLIENT_ID'),
-    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
-    scope=["profile", "email"],
-    redirect_url="/google/authorized"
-)
-app.register_blueprint(google_bp, url_prefix="/google")
-
-# ──────────────────── Маршруты ────────────────────
-@app.route('/')
+@app.route("/")
 def index():
-    # ▸ выбрать год/месяц (по умолчанию — текущие)
     now = datetime.now()
     current_year = now.year
     selected_year = int(request.args.get('year', current_year))
     selected_month = int(request.args.get('month', now.month))
 
-    years = list(range(2020, current_year + 6))               # 2020…+5 лет
+    years = list(range(2020, current_year + 6))
     months = [(i, name) for i, name in enumerate(
         ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
          'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], 1)]
 
-    # ▸ здесь вместо демо‑данных выбери реальные сделки из БД
     demo_trades = [{
-        'pair': 'EUR/USD', 'date': '2025‑07‑04 12:00',
+        'pair': 'EUR/USD', 'date': '2025-07-04 12:00',
         'type': 'Buy', 'lot': 0.1, 'profit': 10.0,
         'comment': 'Удачная сделка'
     }]
@@ -128,12 +85,12 @@ def index():
     return render_template(
         'index.html',
         session=session,
-        premium_end_date=None,      # если нужна дата конца подписки
+        premium_end_date=None,
         texts={
             'total_profit': 'Общая прибыль/убыток',
             'profit_by_pair': 'Прибыль по валютным парам'
         },
-        total_profit=123.45,        # рассчитанное значение
+        total_profit=123.45,
         profit_by_pair={'EUR/USD': 50, 'GBP/USD': -20},
         years=years, months=months,
         selected_year=selected_year,
@@ -141,49 +98,43 @@ def index():
         trades=demo_trades
     )
 
-@app.route('/google_login/callback')
-def google_login_callback():
+# Обработчик callback после авторизации Google
+@app.route("/google/login/authorized")
+def google_authorized():
     if not google.authorized:
         return redirect(url_for("google.login"))
 
     resp = google.get("/oauth2/v2/userinfo")
     if not resp.ok:
-        return "Ошибка Google OAuth", 500
+        return "Ошибка получения данных от Google", 500
 
     info = resp.json()
     email = info["email"]
     username = info.get("name", email.split("@")[0])
 
     with get_db_connection() as conn:
-        user = conn.execute(
-            "SELECT * FROM users WHERE email = ?", (email,)
-        ).fetchone()
+        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
 
         if user is None:
             pw_hash = generate_password_hash(secrets.token_urlsafe(16))
             premium_end = (datetime.utcnow() + timedelta(days=7)).isoformat()
             conn.execute(
-                "INSERT INTO users (username, email, password_hash, premium_end_date) "
-                "VALUES (?, ?, ?, ?)",
+                "INSERT INTO users (username, email, password_hash, premium_end_date) VALUES (?, ?, ?, ?)",
                 (username, email, pw_hash, premium_end)
             )
             conn.commit()
-            user = conn.execute(
-                "SELECT * FROM users WHERE email = ?", (email,)
-            ).fetchone()
+            user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
 
     session['user_id'] = user['id']
     session['username'] = user['username']
     return redirect('/')
 
-@app.route('/logout')
+@app.route("/logout")
 def logout():
     session.clear()
-    return redirect('/')
+    return redirect("/")
 
-
-# ──────────────────── Запуск ────────────────────
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     init_db()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
