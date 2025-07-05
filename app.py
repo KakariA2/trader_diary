@@ -1,3 +1,4 @@
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -10,6 +11,41 @@ from flask import (
 from werkzeug.security import generate_password_hash
 from flask_dance.contrib.google import make_google_blueprint, google
 
+from flask import Flask, redirect, url_for
+from flask_dance.contrib.google import make_google_blueprint, google
+import os
+
+
+app = Flask(__name__)
+app.secret_key = "supersekret_key"  # можешь придумать свою строку
+
+# Разрешаем работу без HTTPS для локальной отладки
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
+# Заменишь client_id и client_secret своими
+google_bp = make_google_blueprint(
+    client_id="96839255887-9gqrdcd2h9tae94b0ngi6kbs5q4iucv7.apps.googleusercontent.com",
+    client_secret="****Y9d1",
+    redirect_to="profile"
+)
+app.register_blueprint(google_bp, url_prefix="/login")
+
+@app.route("/")
+def index():
+    return "<h2>Добро пожаловать!</h2><a href='/login/google'>Войти через Google</a>"
+
+# Профиль, куда перенаправит Google после успешного входа
+@app.route("/profile")
+def profile():
+    if not google.authorized:
+        return redirect(url_for("google.login"))
+
+    resp = google.get("/oauth2/v2/userinfo")
+    if resp.ok:
+        user_info = resp.json()
+        return f"<h3>Привет, {user_info['email']}!</h3>"
+    return "<h3>Не удалось получить информацию о пользователе.</h3>"
+    
 # ──────────────────── Flask app ────────────────────
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key')
@@ -64,9 +100,9 @@ google_bp = make_google_blueprint(
     client_id=os.getenv('GOOGLE_CLIENT_ID'),
     client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
     scope=["profile", "email"],
-    redirect_url="/google_login/callback"
+    redirect_url="/google/authorized"
 )
-app.register_blueprint(google_bp, url_prefix="/login")
+app.register_blueprint(google_bp, url_prefix="/google")
 
 # ──────────────────── Маршруты ────────────────────
 @app.route('/')
