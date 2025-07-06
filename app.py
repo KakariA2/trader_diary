@@ -13,22 +13,23 @@ from flask import (
 from werkzeug.security import generate_password_hash
 from flask_dance.contrib.google import make_google_blueprint, google
 
+# ───── Flask-приложение ─────
 app = Flask(__name__)
-app.secret_key = os.getenv('supersecretkey_1234567890abcdef', 'supersecretkey_0987654321')  # Секретный ключ из .env или запасной
+app.secret_key = os.getenv('supersecretkey_1234567890abcdef', 'supersecretkey_fallback')
 
-# Разрешаем работу без HTTPS для локальной отладки
+# ───── Разрешаем работу без HTTPS для локальной отладки ─────
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-# Настройка Google OAuth blueprint
+# ───── Google OAuth Blueprint ─────
 google_bp = make_google_blueprint(
     client_id=os.getenv('96839255887-9gqrdcd2h9tae94b0ngi6kbs5q4iucv7.apps.googleusercontent.com'),
     client_secret=os.getenv('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'),
     scope=["profile", "mizarand@gmail.com"],
-    redirect_url="/google/login/authorized"  # Этот URL - маршрут, куда Google вернет ответ
+    redirect_url="/google/authorized"
 )
-app.register_blueprint(google_bp, url_prefix="/google_login")
+app.register_blueprint(google_bp, url_prefix="/google")
 
-# Путь к базе
+# ───── База данных ─────
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.path.join(BASE_DIR, 'trades.db')
 
@@ -64,6 +65,7 @@ def init_db():
         )''')
         conn.commit()
 
+# ───── Главная страница ─────
 @app.route("/")
 def index():
     now = datetime.now()
@@ -98,8 +100,8 @@ def index():
         trades=demo_trades
     )
 
-# Обработчик callback после авторизации Google
-@app.route("/google/login/authorized")
+# ───── Google OAuth Callback ─────
+@app.route("/google/authorized")
 def google_authorized():
     if not google.authorized:
         return redirect(url_for("google.login"))
@@ -129,11 +131,13 @@ def google_authorized():
     session['username'] = user['username']
     return redirect('/')
 
+# ───── Выход ─────
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
 
+# ───── Запуск ─────
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     init_db()
