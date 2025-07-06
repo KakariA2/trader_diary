@@ -15,16 +15,16 @@ from flask_dance.contrib.google import make_google_blueprint, google
 
 # ───── Flask-приложение ─────
 app = Flask(__name__)
-app.secret_key = os.getenv('supersecretkey_1234567890abcdef', 'supersecretkey_fallback')
+app.secret_key = os.getenv('SECRET_KEY', 'supersecretkey_fallback')
 
 # ───── Разрешаем работу без HTTPS для локальной отладки ─────
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # ───── Google OAuth Blueprint ─────
 google_bp = make_google_blueprint(
-    client_id=os.getenv('96839255887-9gqrdcd2h9tae94b0ngi6kbs5q4iucv7.apps.googleusercontent.com'),
-    client_secret=os.getenv('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'),
-    scope=["profile", "mizarand@gmail.com"],
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    scope=["profile", "email"],
     redirect_url="/google/authorized"
 )
 app.register_blueprint(google_bp, url_prefix="/google")
@@ -129,7 +129,7 @@ def google_authorized():
 
     session['user_id'] = user['id']
     session['username'] = user['username']
-    return redirect('/')
+    return redirect("/")
 
 # ───── Выход ─────
 @app.route("/logout")
