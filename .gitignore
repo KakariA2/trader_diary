@@ -1,51 +1,8 @@
-# === Python/Flask ===
+.env
 *.pyc
 __pycache__/
 instance/
-.env
 venv/
-.env.*
-*.db
-*.sqlite3
-
-# === Trader Diary specific ===
-
-# === Logs and misc ===
 *.log
-*.swp
-.DS_Store
-*.class
-
-# === VSCode ===
-.vscode/
-
-# === IntelliJ ===
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# === Flutter/Dart (если будет мобильная версия) ===
-**/doc/api/
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-build/
-android/app/debug/
-android/app/profile/
-android/app/release/
-
-# === Render and deployment ===
-build/
-.mypy_cache/
-coverage/
-dist/
-.eggs/
-htmlcov/
-*.egg-info/
-pip-wheel-metadata/
-
-# === Git merge conflict backups ===
-*.orig
+*.sqlite3
+*.db

@@ -7,9 +7,7 @@ import logging
 import secrets
 from datetime import datetime, timedelta
 
-from flask import (
-    Flask, render_template, request, redirect, session, url_for
-)
+from flask import Flask, render_template, request, redirect, session, url_for
 from werkzeug.security import generate_password_hash
 from flask_dance.contrib.google import make_google_blueprint, google
 
@@ -129,7 +127,7 @@ def google_authorized():
 
     session['user_id'] = user['id']
     session['username'] = user['username']
-    return redirect("/")
+    return redirect('/')
 
 # ───── Выход ─────
 @app.route("/logout")
