@@ -20,11 +20,16 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # ───── Google OAuth Blueprint ─────
 google_bp = make_google_blueprint(
-    client_id=os.getenv('GOOGLE_CLIENT_ID'),
-    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
-    scope=["profile", "email"],
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    scope=[
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "openid"
+    ],
     redirect_url="/google/authorized"
 )
+
 app.register_blueprint(google_bp, url_prefix="/google")
 
 # ───── База данных ─────
