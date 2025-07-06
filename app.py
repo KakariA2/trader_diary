@@ -1,4 +1,4 @@
-from dotenv import load_dotenv
+from dotenv import load_dotenv 
 load_dotenv()
 
 import os
@@ -20,8 +20,8 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # ───── Google OAuth Blueprint ─────
 google_bp = make_google_blueprint(
-    client_id=os.getenv("GOOGLE_CLIENT_ID"),
-    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
     scope=[
         "https://www.googleapis.com/auth/userinfo.profile",
         "https://www.googleapis.com/auth/userinfo.email",
@@ -29,7 +29,6 @@ google_bp = make_google_blueprint(
     ],
     redirect_url="/google/authorized"
 )
-
 app.register_blueprint(google_bp, url_prefix="/google")
 
 # ───── База данных ─────
@@ -68,9 +67,14 @@ def init_db():
         )''')
         conn.commit()
 
-# ───── Главная страница ─────
+# ───── Первая страница ─────
 @app.route("/")
 def index():
+    if 'user_id' not in session:
+        # Если пользователь не авторизован — показываем welcome
+        return render_template("welcome.html")
+
+    # Если пользователь авторизован — показываем главную страницу с данными
     now = datetime.now()
     current_year = now.year
     selected_year = int(request.args.get('year', current_year))
@@ -102,6 +106,11 @@ def index():
         selected_month=selected_month,
         trades=demo_trades
     )
+
+# ───── Отдельный роут для welcome, если понадобится ─────
+@app.route("/welcome")
+def welcome():
+    return render_template("welcome.html")
 
 # ───── Google OAuth Callback ─────
 @app.route("/google/authorized")
