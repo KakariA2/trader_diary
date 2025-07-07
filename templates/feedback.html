@@ -49,14 +49,16 @@
 </head>
 <body>
 
-<h2>Обратная связь</h2>
-
-<form method="POST" action="/feedback">
-    <input type="text" name="name" placeholder="Ваше имя" required>
-    <input type="email" name="email" placeholder="Ваша почта" required>
-    <input type="text" name="subject" placeholder="Тема сообщения" required>
-    <textarea name="message" placeholder="Ваше сообщение" rows="5" required></textarea>
-    <button type="submit">📩 Отправить</button>
+<h2>Форма обратной связи</h2>
+{% if success %}
+  <p style="color: green;">Спасибо! Сообщение отправлено.</p>
+{% endif %}
+<form method="POST">
+  <input type="text" name="name" placeholder="Ваше имя" required><br>
+  <input type="email" name="email" placeholder="Email" required><br>
+  <input type="text" name="topic" placeholder="Тема"><br>
+  <textarea name="message" placeholder="Сообщение" rows="4" required></textarea><br>
+  <button type="submit">Отправить</button>
 </form>
 
 {% if confirmation %}
