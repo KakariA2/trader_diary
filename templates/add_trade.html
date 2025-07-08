@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Добавить сделку</title>
+</head>
+<body>
+  <h2>Добавить новую сделку</h2>
+  <form method="POST" enctype="multipart/form-data">
+    <label>Валютная пара:</label>
+    <select name="pair">
+      <option>EUR/USD</option>
+      <option>GBP/USD</option>
+      <option>XAU/USD</option>
+    </select><br><br>
+
+    <label>Объём:</label>
+    <input type="text" name="volume"><br><br>
+
+    <label>Тип сделки:</label>
+    <input type="radio" name="direction" value="BUY"> BUY
+    <input type="radio" name="direction" value="SELL"> SELL<br><br>
+
+    <label>Время входа:</label>
+    <input type="datetime-local" name="entry_time"><br><br>
+
+    <label>Время выхода:</label>
+    <input type="datetime-local" name="exit_time"><br><br>
+
+    <label>Прибыль / убыток:</label>
+    <input type="text" name="profit"><br><br>
+
+    <label>Индикаторы:</label><br>
+    <input type="checkbox" name="rsi"> RSI<br>
+    <input type="checkbox" name="bb"> Bollinger Bands<br>
+    <input type="checkbox" name="ma"> Moving Average<br>
+    <input type="checkbox" name="news"> Новости<br><br>
+
+    <label>Комментарий:</label><br>
+    <textarea name="comment"></textarea><br><br>
+
+    <label>Скриншот сделки:</label>
+    <input type="file" name="screenshot"><br><br>
+
+    <button type="submit">Сохранить сделку</button>
+  </form>
+</body>
+</html>

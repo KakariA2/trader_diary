@@ -1,4 +1,4 @@
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
 load_dotenv()
 
 import os
@@ -7,13 +7,14 @@ import logging
 import secrets
 from datetime import datetime, timedelta
 
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 from werkzeug.security import generate_password_hash
 from flask_dance.contrib.google import make_google_blueprint, google
 
 # ───── Flask-приложение ─────
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'supersecretkey_fallback')
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 # ───── Разрешаем работу без HTTPS для локальной отладки ─────
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -67,14 +68,19 @@ def init_db():
         )''')
         conn.commit()
 
-# ───── Первая страница ─────
+# ───── Главная страница ─────
 @app.route("/")
 def index():
     if 'user_id' not in session:
-        # Если пользователь не авторизован — показываем welcome
         return render_template("welcome.html")
 
-    # Если пользователь авторизован — показываем главную страницу с данными
+    user_id = session['user_id']
+    with get_db_connection() as conn:
+        trades = conn.execute(
+            "SELECT * FROM trades WHERE user_id = ? ORDER BY date DESC",
+            (user_id,)
+        ).fetchall()
+
     now = datetime.now()
     current_year = now.year
     selected_year = int(request.args.get('year', current_year))
@@ -85,11 +91,12 @@ def index():
         ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
          'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], 1)]
 
-    demo_trades = [{
-        'pair': 'EUR/USD', 'date': '2025-07-04 12:00',
-        'type': 'Buy', 'lot': 0.1, 'profit': 10.0,
-        'comment': 'Удачная сделка'
-    }]
+    total_profit = sum([trade['profit'] for trade in trades]) if trades else 0
+
+    profit_by_pair = {}
+    for trade in trades:
+        pair = trade['pair']
+        profit_by_pair[pair] = profit_by_pair.get(pair, 0) + trade['profit']
 
     return render_template(
         'index.html',
@@ -99,15 +106,119 @@ def index():
             'total_profit': 'Общая прибыль/убыток',
             'profit_by_pair': 'Прибыль по валютным парам'
         },
-        total_profit=123.45,
-        profit_by_pair={'EUR/USD': 50, 'GBP/USD': -20},
-        years=years, months=months,
+        total_profit=total_profit,
+        profit_by_pair=profit_by_pair,
+        years=years,
+        months=months,
         selected_year=selected_year,
         selected_month=selected_month,
-        trades=demo_trades
+        trades=trades
     )
 
-# ───── Отдельный роут для welcome, если понадобится ─────
+# ───── Регистрация ─────
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm = request.form.get('confirm_password')
+
+        if not username or not email or not password:
+            return render_template("register.html", error="Все поля обязательны.")
+        
+        if password != confirm:
+            return render_template("register.html", error="Пароли не совпадают.")
+        
+        password_hash = generate_password_hash(password)
+
+        try:
+            with get_db_connection() as conn:
+                conn.execute(
+                    "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+                    (username, email, password_hash)
+                )
+                conn.commit()
+            return redirect('/')
+        except sqlite3.IntegrityError:
+            return render_template("register.html", error="Такой логин или email уже зарегистрирован.")
+    
+    return render_template("register.html")
+
+# ───── Проверка пользователя через AJAX ─────
+@app.route('/check_user', methods=['POST'])
+def check_user():
+    data = request.get_json()
+    username = data.get('username', '').strip()
+    email = data.get('email', '').strip()
+
+    with get_db_connection() as conn:
+        user = conn.execute(
+            "SELECT 1 FROM users WHERE username = ? OR email = ? LIMIT 1",
+            (username, email)
+        ).fetchone()
+
+    return jsonify({'exists': bool(user)})
+
+# ───── Новая форма добавления сделки (страница) ─────
+@app.route('/add_trade', methods=['GET', 'POST'])
+def add_trade():
+    if request.method == 'POST':
+        pair = request.form['pair']
+        volume = request.form['volume']
+        direction = request.form['direction']
+        entry_time = request.form['entry_time']
+        exit_time = request.form['exit_time']
+        profit = request.form['profit']
+        indicators = {
+            'rsi': 'rsi' in request.form,
+            'bb': 'bb' in request.form,
+            'ma': 'ma' in request.form,
+            'news': 'news' in request.form
+        }
+        comment = request.form['comment']
+
+        screenshot = request.files['screenshot']
+        screenshot_filename = None
+        if screenshot and screenshot.filename != '':
+            screenshot_filename = os.path.join(app.config['UPLOAD_FOLDER'], screenshot.filename)
+            screenshot.save(screenshot_filename)
+
+        print("Сделка:", pair, volume, direction, profit, indicators, comment, screenshot_filename)
+        return redirect(url_for('index'))
+
+    return render_template('add_trade.html')
+
+# ───── Старый API добавления сделки через форму (если нужно) ─────
+@app.route('/add_trade_api', methods=['POST'])
+def add_trade_api():
+    if 'user_id' not in session:
+        return redirect('/')
+
+    user_id = session['user_id']
+    pair = request.form.get('pair')
+    date = request.form.get('date')
+    trade_type = request.form.get('type')
+    lot = request.form.get('lot')
+    profit = request.form.get('profit')
+    comment = request.form.get('comment')
+
+    try:
+        lot = float(lot)
+        profit = float(profit)
+    except (TypeError, ValueError):
+        return redirect('/')
+
+    with get_db_connection() as conn:
+        conn.execute('''
+            INSERT INTO trades (user_id, pair, date, type, lot, profit, comment)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, pair, date, trade_type, lot, profit, comment))
+        conn.commit()
+
+    return redirect('/')
+
+# ───── Добро пожаловать ─────
 @app.route("/welcome")
 def welcome():
     return render_template("welcome.html")
@@ -142,6 +253,40 @@ def google_authorized():
     session['user_id'] = user['id']
     session['username'] = user['username']
     return redirect('/')
+
+# ───── Обратная связь ─────
+@app.route("/feedback", methods=["GET", "POST"])
+def feedback():
+    if request.method == "POST":
+        name = request.form.get("name")
+        email = request.form.get("email")
+        topic = request.form.get("topic")
+        message = request.form.get("message")
+        timestamp = datetime.utcnow().isoformat()
+
+        if not name or not email or not message:
+            return "Пожалуйста, заполните все обязательные поля", 400
+
+        with get_db_connection() as conn:
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS feedback (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT,
+                    email TEXT,
+                    topic TEXT,
+                    message TEXT,
+                    timestamp TEXT
+                )
+            ''')
+            conn.execute('''
+                INSERT INTO feedback (name, email, topic, message, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (name, email, topic, message, timestamp))
+            conn.commit()
+
+        return render_template("feedback.html", success=True)
+
+    return render_template("feedback.html")
 
 # ───── Выход ─────
 @app.route("/logout")
