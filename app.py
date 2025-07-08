@@ -9,12 +9,57 @@ from datetime import datetime, timedelta
 
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 from werkzeug.security import generate_password_hash
+from werkzeug.utils import secure_filename
 from flask_dance.contrib.google import make_google_blueprint, google
 
 # ───── Flask-приложение ─────
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'supersecretkey_fallback')
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+
+# Указываем папку для загрузки файлов
+UPLOAD_FOLDER = os.path.join('static', 'uploads')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# ───── Роут для добавления сделки ─────
+@app.route('/add_trade', methods=['GET', 'POST'])
+def add_trade():
+    if 'user_id' not in session:
+        return redirect('/')
+
+    if request.method == 'POST':
+        pair = request.form.get('pair')
+        date = request.form.get('date')
+        trade_type = request.form.get('type')
+        lot = request.form.get('lot')
+        profit = request.form.get('profit')
+        comment = request.form.get('comment')
+
+        # Обработка файла скриншота
+        screenshot = request.files.get('screenshot')
+        screenshot_filename = None
+        if screenshot and screenshot.filename != '':
+            filename = secure_filename(screenshot.filename)
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            screenshot.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            screenshot_filename = filename
+
+        try:
+            lot = float(lot)
+            profit = float(profit)
+        except (TypeError, ValueError):
+            return redirect('/add_trade')  # или обработать ошибку иначе
+
+        with get_db_connection() as conn:
+            conn.execute('''
+                INSERT INTO trades (user_id, pair, date, type, lot, profit, comment, screenshot)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (session['user_id'], pair, date, trade_type, lot, profit, comment, screenshot_filename))
+            conn.commit()
+
+        return redirect('/')
+
+    # Если GET-запрос
+    return render_template('add_trade.html')
 
 # ───── Разрешаем работу без HTTPS для локальной отладки ─────
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -64,22 +109,10 @@ def init_db():
             lot REAL NOT NULL,
             profit REAL NOT NULL,
             comment TEXT,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )''')
-        conn.commit()
-        cur.execute('''CREATE TABLE IF NOT EXISTS trades (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            pair TEXT NOT NULL,
-            date TEXT NOT NULL,
-            type TEXT NOT NULL,
-            lot REAL NOT NULL,
-            profit REAL NOT NULL,
-            comment TEXT,
             screenshot TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )''')
-
+        conn.commit()
 
 # ───── Главная страница ─────
 @app.route("/")
@@ -128,7 +161,7 @@ def index():
         trades=trades
     )
 
-# ───── Регистрация ─────
+# Регистрироваться
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -158,7 +191,6 @@ def register():
     
     return render_template("register.html")
 
-# ───── Проверка пользователя через AJAX ─────
 @app.route('/check_user', methods=['POST'])
 def check_user():
     data = request.get_json()
@@ -173,87 +205,7 @@ def check_user():
 
     return jsonify({'exists': bool(user)})
 
-# ───── Новая форма добавления сделки (страница) ─────
-@app.route('/add_trade', methods=['GET', 'POST'])
-def add_trade():
-    if request.method == 'POST':
-        if 'user_id' not in session:
-            return redirect(url_for('index'))
-
-        user_id = session['user_id']
-        pair = request.form['pair']
-        volume = request.form['volume']
-        direction = request.form['direction']
-        entry_time = request.form['entry_time']
-        exit_time = request.form['exit_time']
-        profit = request.form['profit']
-        indicators = {
-            'rsi': 'rsi' in request.form,
-            'bb': 'bb' in request.form,
-            'ma': 'ma' in request.form,
-            'news': 'news' in request.form
-        }
-        comment = request.form['comment']
-
-        screenshot = request.files['screenshot']
-        screenshot_filename = None
-        if screenshot and screenshot.filename != '':
-            # Сохраняем скриншот с уникальным именем, чтобы не перезаписывать
-            filename = f"{user_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{screenshot.filename}"
-            screenshot_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            screenshot.save(screenshot_path)
-            screenshot_filename = filename
-
-        # Сохраняем в БД
-        with get_db_connection() as conn:
-            conn.execute('''
-                INSERT INTO trades (user_id, pair, date, type, lot, profit, comment)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                user_id,
-                pair,
-                datetime.now().isoformat(),
-                direction,
-                float(volume),
-                float(profit),
-                comment
-            ))
-            conn.commit()
-
-        return redirect(url_for('index'))
-
-    return render_template('add_trade.html')
-
-# ───── Старый API добавления сделки через форму (если нужно) ─────
-@app.route('/add_trade_api', methods=['POST'])
-def add_trade_api():
-    if 'user_id' not in session:
-        return redirect('/')
-
-    user_id = session['user_id']
-    pair = request.form.get('pair')
-    date = request.form.get('date')
-    trade_type = request.form.get('type')
-    lot = request.form.get('lot')
-    profit = request.form.get('profit')
-    comment = request.form.get('comment')
-
-    try:
-        lot = float(lot)
-        profit = float(profit)
-    except (TypeError, ValueError):
-        return redirect('/')
-
-    with get_db_connection() as conn:
-        conn.execute('''
-            INSERT INTO trades (user_id, pair, date, type, lot, profit, comment)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (user_id, pair, date, trade_type, lot, profit, comment))
-        conn.commit()
-
-    return redirect('/')
-
-# ───── Добро пожаловать ─────
+# ───── Отдельный роут для welcome ─────
 @app.route("/welcome")
 def welcome():
     return render_template("welcome.html")
@@ -289,7 +241,7 @@ def google_authorized():
     session['username'] = user['username']
     return redirect('/')
 
-# ───── Обратная связь ─────
+# feedback
 @app.route("/feedback", methods=["GET", "POST"])
 def feedback():
     if request.method == "POST":
