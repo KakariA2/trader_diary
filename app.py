@@ -67,6 +67,19 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id)
         )''')
         conn.commit()
+        cur.execute('''CREATE TABLE IF NOT EXISTS trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            pair TEXT NOT NULL,
+            date TEXT NOT NULL,
+            type TEXT NOT NULL,
+            lot REAL NOT NULL,
+            profit REAL NOT NULL,
+            comment TEXT,
+            screenshot TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )''')
+
 
 # ───── Главная страница ─────
 @app.route("/")
@@ -164,6 +177,10 @@ def check_user():
 @app.route('/add_trade', methods=['GET', 'POST'])
 def add_trade():
     if request.method == 'POST':
+        if 'user_id' not in session:
+            return redirect(url_for('index'))
+
+        user_id = session['user_id']
         pair = request.form['pair']
         volume = request.form['volume']
         direction = request.form['direction']
@@ -181,10 +198,28 @@ def add_trade():
         screenshot = request.files['screenshot']
         screenshot_filename = None
         if screenshot and screenshot.filename != '':
-            screenshot_filename = os.path.join(app.config['UPLOAD_FOLDER'], screenshot.filename)
-            screenshot.save(screenshot_filename)
+            # Сохраняем скриншот с уникальным именем, чтобы не перезаписывать
+            filename = f"{user_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}_{screenshot.filename}"
+            screenshot_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            screenshot.save(screenshot_path)
+            screenshot_filename = filename
 
-        print("Сделка:", pair, volume, direction, profit, indicators, comment, screenshot_filename)
+        # Сохраняем в БД
+        with get_db_connection() as conn:
+            conn.execute('''
+                INSERT INTO trades (user_id, pair, date, type, lot, profit, comment)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                user_id,
+                pair,
+                datetime.now().isoformat(),
+                direction,
+                float(volume),
+                float(profit),
+                comment
+            ))
+            conn.commit()
+
         return redirect(url_for('index'))
 
     return render_template('add_trade.html')

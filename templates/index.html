@@ -138,15 +138,22 @@
         </thead>
         <tbody>
           {% for trade in trades %}
-          <tr>
-            <td>{{ trade.pair }}</td>
-            <td>{{ trade.date }}</td>
-            <td>{{ trade.type }}</td>
-            <td>{{ trade.lot }}</td>
-            <td class="{{ 'positive' if trade.profit >= 0 else 'negative' }}">{{ trade.profit }}</td>
-            <td>{{ trade.comment }}</td>
-          </tr>
-          {% endfor %}
+		<tr>
+			<td>{{ trade.pair }}</td>
+			<td>{{ trade.date }}</td>
+			<td>{{ trade.type }}</td>
+			<td>{{ trade.lot }}</td>
+			<td>{{ trade.profit }}</td>
+			<td>{{ trade.comment }}</td>
+		<td>
+      {% if trade.screenshot %}
+        <img src="{{ url_for('static', filename='uploads/' ~ trade.screenshot) }}" alt="Скриншот" style="max-width:150px;">
+      {% else %}
+        -
+      {% endif %}
+    </td>
+  </tr>
+{% endfor %}
         </tbody>
       </table>
     </div>
