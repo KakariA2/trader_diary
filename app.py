@@ -108,9 +108,95 @@ def init_db():
             screenshot TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )''')
+
+        # Новая таблица promo_codes
+        cur.execute('''CREATE TABLE IF NOT EXISTS promo_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT UNIQUE NOT NULL,
+            description TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            free_days INTEGER DEFAULT 0,
+            discount_percent INTEGER DEFAULT NULL,
+            active INTEGER DEFAULT 1
+        )''')
+
         conn.commit()
 
 from datetime import datetime
+
+def migrate_db():
+    with get_db_connection() as conn:
+        cur = conn.cursor()
+
+        # Проверяем, есть ли столбец 'screenshot' в таблице trades
+        cur.execute("PRAGMA table_info(trades)")
+        columns = [info[1] for info in cur.fetchall()]
+        if 'screenshot' not in columns:
+            print("Миграция: добавляем колонку screenshot в trades")
+            cur.execute("ALTER TABLE trades ADD COLUMN screenshot TEXT")
+            conn.commit()
+from flask import flash
+
+@app.route('/promo_code', methods=['GET', 'POST'])
+def promo_code():
+    if 'user_id' not in session:
+        return redirect('/')
+
+    message = None
+    success = False
+
+    if request.method == 'POST':
+        code_input = request.form.get('promo_code', '').strip()
+
+        with get_db_connection() as conn:
+            promo = conn.execute('''
+                SELECT * FROM promo_codes
+                WHERE code = ? AND active = 1
+                  AND date('now') BETWEEN start_date AND end_date
+            ''', (code_input,)).fetchone()
+
+            if promo:
+                # Допустим, обновим пользователя — добавим free_days к premium_end_date
+                user_id = session['user_id']
+                user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+                now = datetime.utcnow()
+
+                premium_end = user['premium_end_date']
+                if premium_end:
+                    premium_end_dt = datetime.fromisoformat(premium_end)
+                    if premium_end_dt < now:
+                        premium_end_dt = now
+                else:
+                    premium_end_dt = now
+
+                # Добавляем free_days из промокода
+                premium_end_dt += timedelta(days=promo['free_days'])
+
+                conn.execute('''
+                    UPDATE users SET premium_end_date = ?
+                    WHERE id = ?
+                ''', (premium_end_dt.isoformat(), user_id))
+                conn.commit()
+
+                message = f"Промокод '{code_input}' активирован! Ваш премиум продлён на {promo['free_days']} дней."
+                success = True
+            else:
+                message = "Промокод недействителен или истёк."
+
+    return render_template('promo_code.html', message=message, success=success)
+
+@app.route('/add_test_promo')
+def add_test_promo():
+    with get_db_connection() as conn:
+        conn.execute('''
+            INSERT OR IGNORE INTO promo_codes
+            (code, description, start_date, end_date, free_days, discount_percent, active)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', ('TESTPROMO', 'Тестовый промокод', '2025-01-01', '2025-12-31', 5, None, 1))
+        conn.commit()
+    return "Тестовый промокод добавлен: TESTPROMO"
 
 @app.route("/")
 def index():
@@ -131,14 +217,15 @@ def index():
          'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], 1)]
 
     with get_db_connection() as conn:
-        trades = conn.execute(
-            """
-            SELECT * FROM trades 
-            WHERE user_id = ? AND strftime('%Y', date) = ? AND strftime('%m', date) = ?
-            ORDER BY date DESC
-            """,
-            (user_id, str(selected_year), f"{selected_month:02}")
-        ).fetchall()
+       trades = conn.execute(
+    """
+    SELECT * FROM trades 
+    WHERE user_id = ?
+    AND date LIKE ?
+    ORDER BY date DESC
+    """,
+    (user_id, f"{selected_year}-{selected_month:02}%")
+).fetchall()
 
     total_profit = sum([trade['profit'] for trade in trades]) if trades else 0
 
@@ -163,6 +250,7 @@ def index():
         selected_month=selected_month,
         trades=trades
     )
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -282,4 +370,5 @@ def logout():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     init_db()
+    migrate_db()
     app.run(host="0.0.0.0", port=5000, debug=True)

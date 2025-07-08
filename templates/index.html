@@ -47,6 +47,13 @@
     </tr>
   </table>
 
+{% if session.username %}
+  <p>Привет, {{ session.username }}! Чтобы добавить новую сделку, нажмите кнопку «Добавить сделку» ниже.</p>
+  <a href="{{ url_for('add_trade') }}" class="btn btn-primary">Добавить сделку</a>
+{% else %}
+  <p>Пожалуйста, войдите или зарегистрируйтесь, чтобы начать вести дневник трейдера.</p>
+{% endif %}
+
   <div class="container">
     <h1>Дневник трейдера</h1>
 
@@ -148,11 +155,14 @@
               <td>{{ trade.profit }}</td>
               <td>{{ trade.comment }}</td>
               <td>
-                {% if trade.screenshot %}
-                  <img src="{{ url_for('static', filename='uploads/' ~ trade.screenshot) }}" alt="Скриншот" style="max-width:150px;">
-                {% else %}
-                  -
-                {% endif %}
+              <td>
+  {% if trade['screenshot'] %}
+    <img src="{{ url_for('static', filename='uploads/' + trade['screenshot']) }}" alt="Скриншот" style="max-width:150px;">
+  {% else %}
+    <span>-</span>
+  {% endif %}
+</td>
+  
               </td>
             </tr>
           {% endfor %}
