@@ -12,15 +12,12 @@ from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 from flask_dance.contrib.google import make_google_blueprint, google
 
-# ───── Flask-приложение ─────
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'supersecretkey_fallback')
 
-# Указываем папку для загрузки файлов
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# ───── Роут для добавления сделки ─────
 @app.route('/add_trade', methods=['GET', 'POST'])
 def add_trade():
     if 'user_id' not in session:
@@ -36,13 +33,13 @@ def add_trade():
         comment = request.form.get('comment')
         screenshot = request.files.get('screenshot')
 
-        # Сохраняем скриншот, если есть
         screenshot_filename = None
         if screenshot and screenshot.filename:
-            filename = secure_filename(screenshot.filename)
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + secure_filename(screenshot.filename)
             screenshot_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             screenshot.save(screenshot_path)
-            screenshot_filename = filename  # сохраняем только имя, не весь путь
+            screenshot_filename = screenshot_path
 
         try:
             lot = float(lot)
@@ -59,14 +56,10 @@ def add_trade():
 
         return redirect('/')
 
-    # Если GET — показать форму
     return render_template('add_trade.html')
 
-
-# ───── Разрешаем работу без HTTPS для локальной отладки ─────
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
-# ───── Google OAuth Blueprint ─────
 google_bp = make_google_blueprint(
     client_id=os.getenv('GOOGLE_CLIENT_ID'),
     client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
@@ -79,7 +72,6 @@ google_bp = make_google_blueprint(
 )
 app.register_blueprint(google_bp, url_prefix="/google")
 
-# ───── База данных ─────
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.path.join(BASE_DIR, 'trades.db')
 
@@ -116,7 +108,6 @@ def init_db():
         )''')
         conn.commit()
 
-# ───── Главная страница ─────
 @app.route("/")
 def index():
     if 'user_id' not in session:
@@ -163,7 +154,6 @@ def index():
         trades=trades
     )
 
-# Регистрироваться
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -207,12 +197,10 @@ def check_user():
 
     return jsonify({'exists': bool(user)})
 
-# ───── Отдельный роут для welcome ─────
 @app.route("/welcome")
 def welcome():
     return render_template("welcome.html")
 
-# ───── Google OAuth Callback ─────
 @app.route("/google/authorized")
 def google_authorized():
     if not google.authorized:
@@ -243,7 +231,6 @@ def google_authorized():
     session['username'] = user['username']
     return redirect('/')
 
-# feedback
 @app.route("/feedback", methods=["GET", "POST"])
 def feedback():
     if request.method == "POST":
@@ -277,13 +264,11 @@ def feedback():
 
     return render_template("feedback.html")
 
-# ───── Выход ─────
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/")
 
-# ───── Запуск ─────
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     init_db()
