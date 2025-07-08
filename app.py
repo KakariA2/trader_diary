@@ -27,39 +27,41 @@ def add_trade():
         return redirect('/')
 
     if request.method == 'POST':
+        user_id = session['user_id']
         pair = request.form.get('pair')
         date = request.form.get('date')
         trade_type = request.form.get('type')
         lot = request.form.get('lot')
         profit = request.form.get('profit')
         comment = request.form.get('comment')
-
-        # Обработка файла скриншота
         screenshot = request.files.get('screenshot')
+
+        # Сохраняем скриншот, если есть
         screenshot_filename = None
-        if screenshot and screenshot.filename != '':
+        if screenshot and screenshot.filename:
             filename = secure_filename(screenshot.filename)
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            screenshot.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            screenshot_filename = filename
+            screenshot_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            screenshot.save(screenshot_path)
+            screenshot_filename = filename  # сохраняем только имя, не весь путь
 
         try:
             lot = float(lot)
             profit = float(profit)
         except (TypeError, ValueError):
-            return redirect('/add_trade')  # или обработать ошибку иначе
+            return redirect('/')
 
         with get_db_connection() as conn:
             conn.execute('''
                 INSERT INTO trades (user_id, pair, date, type, lot, profit, comment, screenshot)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (session['user_id'], pair, date, trade_type, lot, profit, comment, screenshot_filename))
+            ''', (user_id, pair, date, trade_type, lot, profit, comment, screenshot_filename))
             conn.commit()
 
         return redirect('/')
 
-    # Если GET-запрос
+    # Если GET — показать форму
     return render_template('add_trade.html')
+
 
 # ───── Разрешаем работу без HTTPS для локальной отладки ─────
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
