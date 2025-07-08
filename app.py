@@ -36,10 +36,12 @@ def add_trade():
         screenshot_filename = None
         if screenshot and screenshot.filename:
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_" + secure_filename(screenshot.filename)
+            filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S_") + secure_filename(screenshot.filename)
             screenshot_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             screenshot.save(screenshot_path)
-            screenshot_filename = screenshot_path
+            screenshot_filename = filename  # сохраняем только имя файла
+        else:
+            screenshot_filename = None  # если файла нет, то None
 
         try:
             lot = float(lot)
@@ -108,27 +110,35 @@ def init_db():
         )''')
         conn.commit()
 
+from datetime import datetime
+
 @app.route("/")
 def index():
     if 'user_id' not in session:
         return render_template("welcome.html")
 
     user_id = session['user_id']
-    with get_db_connection() as conn:
-        trades = conn.execute(
-            "SELECT * FROM trades WHERE user_id = ? ORDER BY date DESC",
-            (user_id,)
-        ).fetchall()
-
     now = datetime.now()
     current_year = now.year
+    current_month = now.month
+
     selected_year = int(request.args.get('year', current_year))
-    selected_month = int(request.args.get('month', now.month))
+    selected_month = int(request.args.get('month', current_month))
 
     years = list(range(2020, current_year + 6))
     months = [(i, name) for i, name in enumerate(
         ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
          'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], 1)]
+
+    with get_db_connection() as conn:
+        trades = conn.execute(
+            """
+            SELECT * FROM trades 
+            WHERE user_id = ? AND strftime('%Y', date) = ? AND strftime('%m', date) = ?
+            ORDER BY date DESC
+            """,
+            (user_id, str(selected_year), f"{selected_month:02}")
+        ).fetchall()
 
     total_profit = sum([trade['profit'] for trade in trades]) if trades else 0
 

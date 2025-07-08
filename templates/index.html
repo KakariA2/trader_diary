@@ -90,7 +90,7 @@
     </div>
 
     <!-- Форма добавления сделки -->
-    <form action="/add_trade" method="POST">
+    <form action="/add_trade" method="POST" enctype="multipart/form-data">
       <input type="text" name="pair" placeholder="Пара (например, EUR/USD)" required>
       <input type="datetime-local" name="date" required>
       <select name="type">
@@ -100,6 +100,7 @@
       <input type="number" name="lot" step="0.01" placeholder="Лот" required>
       <input type="number" name="profit" step="0.01" placeholder="Прибыль/Убыток" required>
       <input type="text" name="comment" placeholder="Комментарий">
+      <input type="file" name="screenshot" accept="image/*" />
       <button type="submit">💾 Сохранить</button>
     </form>
 
