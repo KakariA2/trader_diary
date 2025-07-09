@@ -11,6 +11,20 @@
 
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3753146282257487" crossorigin="anonymous"></script>
+<!-- Lightbox2 CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css" rel="stylesheet" />
+
+<style>
+  /* Сделать крестик закрытия крупнее и виднее */
+  .lb-close {
+    font-size: 28px !important;
+    color: white !important;
+    opacity: 1 !important;
+    top: 10px !important;
+    right: 10px !important;
+  }
+</style>
+
 </head>
 
 <body>
@@ -155,13 +169,18 @@
               <td>{{ trade.profit }}</td>
               <td>{{ trade.comment }}</td>
               <td>
-              <td>
   {% if trade['screenshot'] %}
-    <img src="{{ url_for('static', filename='uploads/' + trade['screenshot']) }}" alt="Скриншот" style="max-width:150px;">
+    <a href="{{ url_for('static', filename='uploads/' + trade['screenshot']) }}"
+       data-lightbox="trade-gallery"
+       data-title="{{ trade.pair }} • {{ trade.date }}">
+      <img src="{{ url_for('static', filename='uploads/' + trade['screenshot']) }}"
+           alt="Скриншот"
+           style="max-width: 150px; margin: 5px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.3);">
+    </a>
   {% else %}
     <span>-</span>
   {% endif %}
-</td>
+
   
               </td>
             </tr>
@@ -216,6 +235,9 @@
       }
     });
   </script>
+
+<!-- Lightbox2 JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
 
 </body>
 </html>
