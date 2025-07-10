@@ -1,8 +1,32 @@
-.env
-*.pyc
+# Python
 __pycache__/
-instance/
+*.pyc
+*.pyo
+*.pyd
+*.env
+env/
 venv/
-*.log
-*.sqlite3
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# Database files
 *.db
+*.sqlite3
+
+# Uploads and media
+static/uploads/
+static/journal_screens/
+
+# IDE и системные файлы
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Flask secret key file (если есть)
+instance/
+
+# PyCharm
+*.iml
