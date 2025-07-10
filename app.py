@@ -9,6 +9,10 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, session
 from werkzeug.utils import secure_filename
 from flask_dance.contrib.google import make_google_blueprint
+from flask import session, render_template, request
+from datetime import datetime
+from flask import redirect, url_for
+from flask_dance.contrib.google import google
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'supersecretkey_fallback')
@@ -33,7 +37,8 @@ google_bp = make_google_blueprint(
         "https://www.googleapis.com/auth/userinfo.email",
         "openid"
     ],
-    redirect_url="/google/authorized"
+    # убираем redirect_url полностью!
+    # redirect_url="/google/authorized"  <- убираем эту строку
 )
 app.register_blueprint(google_bp, url_prefix="/google")
 
@@ -91,32 +96,65 @@ def init_db():
         )''')
         conn.commit()
 
-def migrate_db():
+@app.route('/')
+def index():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    user_id = session['user_id']
+
+    # Получаем сделки, прибыль и пр.
     with get_db_connection() as conn:
-        cur = conn.cursor()
+        # Итоговая прибыль
+        total_profit = conn.execute('SELECT SUM(profit) FROM trades WHERE user_id = ?', (user_id,)).fetchone()[0]
+        total_profit = total_profit if total_profit is not None else 0.0
 
-        # trades: добавить колонку screenshot если нет
-        cur.execute("PRAGMA table_info(trades)")
-        trades_columns = [info[1] for info in cur.fetchall()]
-        if 'screenshot' not in trades_columns:
-            print("Миграция: добавляем колонку screenshot в trades")
-            cur.execute("ALTER TABLE trades ADD COLUMN screenshot TEXT")
-            conn.commit()
+        # Прибыль по инструментам
+        rows = conn.execute('''
+            SELECT pair, SUM(profit) as pair_profit
+            FROM trades
+            WHERE user_id = ?
+            GROUP BY pair
+        ''', (user_id,)).fetchall()
+        profit_by_pair = {row['pair']: row['pair_profit'] for row in rows}
 
-        # journal: проверить нужные колонки
-        cur.execute("PRAGMA table_info(journal)")
-        journal_columns = [info[1] for info in cur.fetchall()]
+        # Получаем все сделки пользователя (например, за последний месяц или все)
+        trades = conn.execute('''
+            SELECT * FROM trades WHERE user_id = ? ORDER BY date DESC LIMIT 50
+        ''', (user_id,)).fetchall()
 
-        required_journal_columns = ['thoughts', 'emotion', 'errors', 'goal', 'screenshot', 'goal_achieved']
-        for column in required_journal_columns:
-            if column not in journal_columns:
-                print(f"Миграция: добавляем колонку {column} в journal")
-                # Для goal_achieved ставим INTEGER DEFAULT 0, для остальных TEXT
-                if column == 'goal_achieved':
-                    cur.execute(f"ALTER TABLE journal ADD COLUMN {column} INTEGER DEFAULT 0")
-                else:
-                    cur.execute(f"ALTER TABLE journal ADD COLUMN {column} TEXT")
-                conn.commit()
+        # Получаем дату окончания премиум-подписки пользователя (если есть)
+        premium_end_date = conn.execute('SELECT premium_end_date FROM users WHERE id = ?', (user_id,)).fetchone()
+        premium_end_date = premium_end_date[0] if premium_end_date and premium_end_date[0] else None
+
+    # Для фильтра по датам
+    now = datetime.now()
+    years = list(range(2022, now.year + 1))
+    months = [(i, name) for i, name in enumerate(
+        ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+         'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'], 1)]
+
+    # По умолчанию текущий год и месяц
+    selected_year = request.args.get('year', now.year, type=int)
+    selected_month = request.args.get('month', now.month, type=int)
+
+    texts = {
+        'total_profit': 'Итоговая прибыль',
+        'profit_by_pair': 'Прибыль по инструментам',
+    }
+
+    return render_template(
+        'index.html',
+        texts=texts,
+        total_profit=total_profit,
+        profit_by_pair=profit_by_pair,
+        trades=trades,
+        premium_end_date=premium_end_date,
+        years=years,
+        months=months,
+        selected_year=selected_year,
+        selected_month=selected_month
+    )
 
 @app.route('/add_trade', methods=['GET', 'POST'])
 def add_trade():
@@ -233,7 +271,6 @@ def journal():
         total=total_goals
     )
 
-# 🔧 ВНЕ функции journal!
 @app.route('/update_goal/<int:entry_id>', methods=['POST'])
 def update_goal(entry_id):
     if 'user_id' not in session:
@@ -248,6 +285,58 @@ def update_goal(entry_id):
         conn.commit()
 
     return redirect('/journal')
+
+def migrate_db():
+    with get_db_connection() as conn:
+        cur = conn.cursor()
+
+        cur.execute("PRAGMA table_info(trades)")
+        trades_columns = [info[1] for info in cur.fetchall()]
+        if 'screenshot' not in trades_columns:
+            print("Миграция: добавляем колонку screenshot в trades")
+            cur.execute("ALTER TABLE trades ADD COLUMN screenshot TEXT")
+            conn.commit()
+
+        cur.execute("PRAGMA table_info(journal)")
+        journal_columns = [info[1] for info in cur.fetchall()]
+        required = ['thoughts', 'emotion', 'errors', 'goal', 'screenshot', 'goal_achieved']
+        for col in required:
+            if col not in journal_columns:
+                print(f"Миграция: добавляем колонку {col} в journal")
+                if col == 'goal_achieved':
+                    cur.execute(f"ALTER TABLE journal ADD COLUMN {col} INTEGER DEFAULT 0")
+                else:
+                    cur.execute(f"ALTER TABLE journal ADD COLUMN {col} TEXT")
+                conn.commit()
+
+def get_or_create_user(user_info):
+    email = user_info.get("email")
+    username = user_info.get("name", email.split('@')[0])
+
+    with get_db_connection() as conn:
+        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        if user is None:
+            cur = conn.cursor()
+            # В поле password_hash можно записать пустую строку или NULL, если пользователь через Google
+            cur.execute("INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)", (username, email, ""))
+            conn.commit()
+            user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        return user["id"]
+
+@app.route('/login')
+def login():
+    if not google.authorized:
+        return redirect(url_for("google.login"))  # Перенаправляем на Google OAuth
+    resp = google.get("/oauth2/v2/userinfo")
+    if resp.ok:
+        user_info = resp.json()
+        # Тут должна быть логика: сохраняем user_info в сессию, создаём пользователя в БД и т.д.
+        # Например:
+        session['user_id'] = get_or_create_user(user_info)
+        return redirect('/')
+    else:
+        return "Не удалось получить информацию о пользователе"
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
