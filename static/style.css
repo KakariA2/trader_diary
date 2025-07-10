@@ -147,4 +147,17 @@ footer.support-box {
   gap: 10px;
   text-align: right;
 }
+.lb-close {
+  font-size: 28px !important;
+  color: white !important;
+  opacity: 1 !important;
+}
+.lb-close {
+  font-size: 28px !important;
+  color: white !important;
+  opacity: 1 !important;
+  top: 10px !important;
+  right: 10px !important;
+  cursor: pointer;
+}
 

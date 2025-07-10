@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Журнал трейдера</title>
+    <style>
+        .goal-form {
+            display: inline;
+        }
+        .achieved {
+            background-color: #d4edda;
+        }
+        .not-achieved {
+            background-color: #f8d7da;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            text-align: left;
+        }
+        img.screenshot-thumb {
+            width: 100px;
+            cursor: pointer;
+            border: 1px solid #999;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Журнал трейдера</h1>
+
+<p><strong>Достигнуто целей:</strong> <span id="goal-count">{{ achieved }} из {{ total }}</span></p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Дата</th>
+            <th>Мысли</th>
+            <th>Эмоции</th>
+            <th>Ошибки</th>
+            <th>Цель</th>
+            <th>Скрин</th>
+            <th>Цель достигнута</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in entries %}
+        <tr class="{{ 'achieved' if entry.goal_achieved else 'not-achieved' }}">
+            <td>{{ entry.date }}</td>
+            <td>{{ entry.thoughts }}</td>
+            <td>{{ entry.emotion }}</td>
+            <td>{{ entry.errors }}</td>
+            <td>{{ entry.goal }}</td>
+            <td>
+                {% if entry.screenshot %}
+                    <a href="{{ url_for('static', filename='journal_screens/' ~ entry.screenshot) }}" target="_blank">
+                        <img class="screenshot-thumb" src="{{ url_for('static', filename='journal_screens/' ~ entry.screenshot) }}" alt="Скрин" />
+                    </a>
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                <form class="goal-form" method="POST" action="{{ url_for('update_goal', entry_id=entry.id) }}">
+                    <input type="checkbox" name="goal_achieved" onchange="this.form.submit()" {% if entry.goal_achieved %}checked{% endif %}>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    // Обновляем счётчик целей при загрузке страницы (данные из сервера)
+    // При необходимости можно добавить динамическое обновление через AJAX
+</script>
+
+</body>
+</html>
