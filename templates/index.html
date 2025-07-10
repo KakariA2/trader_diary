@@ -29,6 +29,22 @@
 
 <body>
 
+<!-- Навигационная панель -->
+<nav style="background-color: #222; padding: 10px;">
+  <a href="/" style="color: white; margin-right: 15px; text-decoration: none;">🏠 Главная</a>
+  <a href="/add_trade" style="color: white; margin-right: 15px; text-decoration: none;">➕ Добавить сделку</a>
+  <a href="/journal" style="color: white; margin-right: 15px; text-decoration: none;">📓 Дневник</a>
+  <a href="/promo_code" style="color: white; margin-right: 15px; text-decoration: none;">🎁 Промокод</a>
+  <a href="/feedback" style="color: white; margin-right: 15px; text-decoration: none;">📩 Обратная связь</a>
+  {% if session.get('username') %}
+    <span style="color: white;">👤 {{ session['username'] }}</span>
+    <a href="{{ url_for('logout') }}" style="color: white; margin-left: 10px;">🚪 Выйти</a>
+  {% else %}
+    <a href="{{ url_for('google.login') }}" style="color: white;">🔐 Войти через Google</a>
+  {% endif %}
+</nav>
+
+
   <!-- Верхняя панель с временем и логином -->
   <table style="width: 100%; padding: 10px;">
     <tr>
